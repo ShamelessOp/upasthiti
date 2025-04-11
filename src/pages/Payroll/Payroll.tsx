@@ -1,15 +1,13 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Download, FilePdf, FileSpreadsheet, Plus, Search } from "lucide-react";
+import { Calendar, Download, FileText, FileSpreadsheet, Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-// Mock data for demonstration purposes
 const MOCK_SITES = [
   { id: "1", name: "Site A - Residential Complex" },
   { id: "2", name: "Site B - Commercial Building" },
@@ -94,7 +92,6 @@ export default function Payroll() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("current");
 
-  // Filter payroll data based on search query and selected site
   const filteredPayroll = MOCK_PAYROLL_DATA.filter((record) => {
     const matchesSearch =
       record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -106,7 +103,6 @@ export default function Payroll() {
     return matchesSearch && matchesSite;
   });
 
-  // Calculate payroll summary
   const totalWorkers = filteredPayroll.length;
   const totalPaid = filteredPayroll.filter(r => r.status === "Paid").length;
   const totalAmount = filteredPayroll.reduce((sum, record) => sum + record.totalPay, 0);
@@ -260,7 +256,7 @@ export default function Payroll() {
                           </TableCell>
                           <TableCell>
                             <Button variant="ghost" size="sm">
-                              <FilePdf className="h-4 w-4" />
+                              <FileText className="h-4 w-4" />
                               <span className="sr-only">Generate Payslip</span>
                             </Button>
                           </TableCell>

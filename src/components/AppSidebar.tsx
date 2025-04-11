@@ -54,7 +54,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild active={pathname === "/"}>
+                <SidebarMenuButton asChild isActive={pathname === "/"}>
                   <Link to="/">
                     <Home className="h-4 w-4" />
                     <span>Dashboard</span>
@@ -62,7 +62,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild active={pathname.startsWith("/attendance")}>
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/attendance")}>
                   <Link to="/attendance">
                     <Calendar className="h-4 w-4" />
                     <span>Attendance</span>
@@ -70,7 +70,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild active={pathname.startsWith("/payroll")}>
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/payroll")}>
                   <Link to="/payroll">
                     <DollarSign className="h-4 w-4" />
                     <span>Payroll</span>
@@ -78,7 +78,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild active={pathname.startsWith("/inventory")}>
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/inventory")}>
                   <Link to="/inventory">
                     <Package className="h-4 w-4" />
                     <span>Inventory</span>
@@ -86,7 +86,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild active={pathname.startsWith("/cashbook")}>
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/cashbook")}>
                   <Link to="/cashbook">
                     <ClipboardList className="h-4 w-4" />
                     <span>Cashbook</span>
@@ -95,7 +95,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
               {(user?.role === "admin" || user?.role === "supervisor") && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild active={pathname.startsWith("/reports")}>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith("/reports")}>
                     <Link to="/reports">
                       <ClipboardList className="h-4 w-4" />
                       <span>Reports</span>
@@ -113,7 +113,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild active={pathname.startsWith("/users")}>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith("/users")}>
                     <Link to="/users">
                       <Users className="h-4 w-4" />
                       <span>Users</span>
@@ -121,7 +121,7 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild active={pathname.startsWith("/settings")}>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith("/settings")}>
                     <Link to="/settings">
                       <Settings className="h-4 w-4" />
                       <span>Settings</span>
