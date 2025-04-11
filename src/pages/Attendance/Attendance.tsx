@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,88 +7,93 @@ import { Calendar, Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-// Mock data for demonstration purposes
-const MOCK_SITES = [
-  { id: "1", name: "Site A - Residential Complex" },
-  { id: "2", name: "Site B - Commercial Building" },
-  { id: "3", name: "Site C - Highway Project" },
-];
-
-const MOCK_ATTENDANCE_DATA = [
-  {
-    id: "1",
-    workerId: "W001",
-    name: "Rajesh Kumar",
-    site: "Site A - Residential Complex",
-    date: "2025-04-11",
-    checkInTime: "08:00 AM",
-    checkOutTime: "05:00 PM",
-    status: "Present",
-    overtime: "1 hour",
-  },
-  {
-    id: "2",
-    workerId: "W002",
-    name: "Sunil Sharma",
-    site: "Site A - Residential Complex",
-    date: "2025-04-11",
-    checkInTime: "08:15 AM",
-    checkOutTime: "04:45 PM",
-    status: "Present",
-    overtime: "0 hour",
-  },
-  {
-    id: "3",
-    workerId: "W003",
-    name: "Priya Patel",
-    site: "Site B - Commercial Building",
-    date: "2025-04-11",
-    checkInTime: "08:30 AM",
-    checkOutTime: "05:30 PM",
-    status: "Present",
-    overtime: "1.5 hours",
-  },
-  {
-    id: "4",
-    workerId: "W004",
-    name: "Amit Singh",
-    site: "Site C - Highway Project",
-    date: "2025-04-11",
-    checkInTime: "",
-    checkOutTime: "",
-    status: "Absent",
-    overtime: "0 hour",
-  },
-  {
-    id: "5",
-    workerId: "W005",
-    name: "Neha Gupta",
-    site: "Site B - Commercial Building",
-    date: "2025-04-11",
-    checkInTime: "08:05 AM",
-    checkOutTime: "06:00 PM",
-    status: "Present",
-    overtime: "2 hours",
-  },
-];
+import { AttendanceFilter, AttendanceRecord } from "@/models/attendance";
+import { attendanceService } from "@/services/attendanceService";
+import { siteService } from "@/services/siteService";
+import { Site } from "@/models/site";
+import { toast } from "sonner";
 
 export default function Attendance() {
+  const [sites, setSites] = useState<Site[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [selectedSite, setSelectedSite] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [presentCount, setPresentCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
-  // Filter attendance data based on search query and selected site
-  const filteredAttendance = MOCK_ATTENDANCE_DATA.filter((record) => {
-    const matchesSearch =
-      record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      record.workerId.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesSite =
-      selectedSite === "all" || record.site.includes(selectedSite);
-    
-    return matchesSearch && matchesSite;
-  });
+  // Load sites on component mount
+  useEffect(() => {
+    loadSites();
+  }, []);
+
+  // Load attendance records when filter changes
+  useEffect(() => {
+    loadAttendanceRecords();
+  }, [selectedSite, selectedDate]);
+
+  const loadSites = async () => {
+    try {
+      const siteData = await siteService.getAllSites();
+      setSites(siteData);
+    } catch (error) {
+      toast.error("Failed to load sites");
+    }
+  };
+
+  const loadAttendanceRecords = async () => {
+    setIsLoading(true);
+    try {
+      const filter: AttendanceFilter = {
+        date: selectedDate,
+        searchQuery: searchQuery
+      };
+      
+      if (selectedSite !== "all") {
+        filter.siteId = selectedSite;
+      }
+      
+      const records = await attendanceService.getAttendance(filter);
+      setAttendanceRecords(records);
+      
+      // Calculate present count
+      const present = records.filter(r => r.status === "Present").length;
+      setPresentCount(present);
+      setTotalCount(records.length);
+    } catch (error) {
+      toast.error("Failed to load attendance records");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSearch = () => {
+    loadAttendanceRecords();
+  };
+
+  const handleMarkAttendance = async (record: AttendanceRecord, status: 'Present' | 'Absent') => {
+    try {
+      if (status === 'Present') {
+        await attendanceService.markAttendance({
+          ...record,
+          status: 'Present',
+          checkInTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+        });
+      } else {
+        await attendanceService.updateAttendance(record.id, { status: 'Absent' });
+      }
+      loadAttendanceRecords();
+      toast.success(`Attendance marked as ${status}`);
+    } catch (error) {
+      toast.error("Failed to update attendance");
+    }
+  };
+
+  const formatTime = (time: string) => {
+    if (!time) return "-";
+    return time;
+  };
 
   return (
     <div className="space-y-6 animate-in">
@@ -117,7 +122,7 @@ export default function Attendance() {
             <CardHeader>
               <CardTitle>Today's Attendance</CardTitle>
               <CardDescription>
-                April 11, 2025 | Total Present: {filteredAttendance.filter(r => r.status === "Present").length} / {filteredAttendance.length}
+                {selectedDate} | Total Present: {presentCount} / {totalCount}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -139,8 +144,8 @@ export default function Attendance() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Sites</SelectItem>
-                      {MOCK_SITES.map((site) => (
-                        <SelectItem key={site.id} value={site.name}>
+                      {sites.map((site) => (
+                        <SelectItem key={site.id} value={site.id}>
                           {site.name}
                         </SelectItem>
                       ))}
@@ -155,6 +160,7 @@ export default function Attendance() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="flex-1"
                   />
+                  <Button onClick={handleSearch} size="sm">Search</Button>
                 </div>
               </div>
 
@@ -173,14 +179,22 @@ export default function Attendance() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredAttendance.length > 0 ? (
-                      filteredAttendance.map((record) => (
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-4">
+                          <div className="flex justify-center">
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : attendanceRecords.length > 0 ? (
+                      attendanceRecords.map((record) => (
                         <TableRow key={record.id}>
                           <TableCell className="font-medium">{record.workerId}</TableCell>
-                          <TableCell>{record.name}</TableCell>
-                          <TableCell>{record.site}</TableCell>
-                          <TableCell>{record.checkInTime || "-"}</TableCell>
-                          <TableCell>{record.checkOutTime || "-"}</TableCell>
+                          <TableCell>{record.workerName}</TableCell>
+                          <TableCell>{record.siteName}</TableCell>
+                          <TableCell>{formatTime(record.checkInTime)}</TableCell>
+                          <TableCell>{formatTime(record.checkOutTime)}</TableCell>
                           <TableCell>
                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                               record.status === "Present" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
@@ -188,11 +202,31 @@ export default function Attendance() {
                               {record.status}
                             </span>
                           </TableCell>
-                          <TableCell>{record.overtime}</TableCell>
+                          <TableCell>{record.overtimeHours} hour(s)</TableCell>
                           <TableCell>
-                            <Button variant="ghost" size="sm">
-                              Edit
-                            </Button>
+                            <div className="flex space-x-2">
+                              {record.status !== "Present" && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleMarkAttendance(record, "Present")}
+                                >
+                                  Mark Present
+                                </Button>
+                              )}
+                              {record.status !== "Absent" && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleMarkAttendance(record, "Absent")}
+                                >
+                                  Mark Absent
+                                </Button>
+                              )}
+                              <Button variant="outline" size="sm">
+                                Edit
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))

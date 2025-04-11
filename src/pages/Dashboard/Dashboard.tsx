@@ -1,12 +1,53 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, DollarSign, Package, UserCheck, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { attendanceService } from "@/services/attendanceService";
+import { siteService } from "@/services/siteService";
+import { AttendanceSummary } from "@/models/attendance";
+import { Site } from "@/models/site";
+import { toast } from "sonner";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummary | null>(null);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [workerCount, setWorkerCount] = useState(0);
+  const [lowStockCount, setLowStockCount] = useState(7);
+  const [weeklyPayroll, setWeeklyPayroll] = useState(284500);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      // Load attendance summary
+      const summary = await attendanceService.getAttendanceSummary();
+      setAttendanceSummary(summary);
+      
+      // Load sites
+      const siteData = await siteService.getAllSites();
+      setSites(siteData);
+      
+      // Calculate total workers count
+      const totalWorkers = siteData.reduce((sum, site) => sum + site.workersCount, 0);
+      setWorkerCount(totalWorkers);
+    } catch (error) {
+      toast.error("Failed to load dashboard data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Format currency values
+  const formatCurrency = (value: number) => {
+    return `₹${value.toLocaleString()}`;
+  };
 
   return (
     <div className="space-y-6 animate-in">
@@ -33,9 +74,9 @@ export default function Dashboard() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">152</div>
+                <div className="text-2xl font-bold">{isLoading ? "..." : workerCount}</div>
                 <p className="text-xs text-muted-foreground">
-                  +2 since last month
+                  Across {sites.length} active sites
                 </p>
               </CardContent>
             </Card>
@@ -46,9 +87,15 @@ export default function Dashboard() {
                 <UserCheck className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">124</div>
+                <div className="text-2xl font-bold">
+                  {isLoading ? "..." : attendanceSummary?.present || 0}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  81.6% of total workers
+                  {isLoading 
+                    ? "Loading..." 
+                    : attendanceSummary 
+                      ? `${((attendanceSummary.present / attendanceSummary.totalWorkers) * 100).toFixed(1)}% of total workers` 
+                      : "No data available"}
                 </p>
               </CardContent>
             </Card>
@@ -59,7 +106,7 @@ export default function Dashboard() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">₹284,500</div>
+                <div className="text-2xl font-bold">{formatCurrency(weeklyPayroll)}</div>
                 <p className="text-xs text-muted-foreground">
                   +₹24,000 from last week
                 </p>
@@ -72,7 +119,7 @@ export default function Dashboard() {
                 <Package className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">7</div>
+                <div className="text-2xl font-bold">{lowStockCount}</div>
                 <p className="text-xs text-muted-foreground">
                   Items need reordering
                 </p>
@@ -89,10 +136,15 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
-                {/* Placeholder for chart */}
-                <div className="h-[200px] w-full rounded-md bg-muted/30 flex items-center justify-center">
-                  <p className="text-muted-foreground">Attendance Chart</p>
-                </div>
+                {isLoading ? (
+                  <div className="h-[200px] w-full flex items-center justify-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                  </div>
+                ) : (
+                  <div className="h-[200px] w-full rounded-md bg-muted/30 flex items-center justify-center">
+                    <p className="text-muted-foreground">Attendance Chart</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
             
