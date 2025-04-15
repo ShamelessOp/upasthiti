@@ -20,6 +20,7 @@ import Payroll from "@/pages/Payroll/Payroll";
 import Inventory from "@/pages/Inventory/Inventory";
 import Cashbook from "@/pages/Cashbook/Cashbook";
 import Settings from "@/pages/Settings/Settings";
+import Reports from "@/pages/Reports/Reports";
 
 // Not Found Page
 import NotFound from "./pages/NotFound";
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/inventory" element={<AppLayout><Inventory /></AppLayout>} />
             <Route path="/cashbook" element={<AppLayout><Cashbook /></AppLayout>} />
             <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+            <Route path="/reports" element={<AppLayout><Reports /></AppLayout>} />
 
             {/* Redirect to home if no match */}
             <Route path="*" element={<NotFound />} />
