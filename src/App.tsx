@@ -13,6 +13,7 @@ import Signup from "@/pages/Auth/Signup";
 
 // Dashboard Pages
 import Dashboard from "@/pages/Dashboard/Dashboard";
+import Users from "@/pages/Users/Users";
 
 // Feature Pages
 import Attendance from "@/pages/Attendance/Attendance";
@@ -41,6 +42,7 @@ const App = () => (
             
             {/* Protected Routes */}
             <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
+            <Route path="/users" element={<AppLayout><Users /></AppLayout>} />
             <Route path="/attendance" element={<AppLayout><Attendance /></AppLayout>} />
             <Route path="/payroll" element={<AppLayout><Payroll /></AppLayout>} />
             <Route path="/inventory" element={<AppLayout><Inventory /></AppLayout>} />
