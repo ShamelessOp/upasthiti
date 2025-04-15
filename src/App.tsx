@@ -11,10 +11,11 @@ import { AppLayout } from "@/components/AppLayout";
 import Login from "@/pages/Auth/Login";
 import Signup from "@/pages/Auth/Signup";
 
-// Main Pages
-import Sites from "@/pages/Sites/Sites";
+// Dashboard Pages
 import Dashboard from "@/pages/Dashboard/Dashboard";
 import Users from "@/pages/Users/Users";
+
+// Feature Pages
 import Attendance from "@/pages/Attendance/Attendance";
 import Payroll from "@/pages/Payroll/Payroll";
 import Inventory from "@/pages/Inventory/Inventory";
@@ -40,15 +41,14 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             
             {/* Protected Routes */}
-            <Route path="/" element={<AppLayout><Sites /></AppLayout>} />
-            <Route path="/sites/:siteId" element={<AppLayout><Dashboard /></AppLayout>} />
-            <Route path="/sites/:siteId/users" element={<AppLayout><Users /></AppLayout>} />
-            <Route path="/sites/:siteId/attendance" element={<AppLayout><Attendance /></AppLayout>} />
-            <Route path="/sites/:siteId/payroll" element={<AppLayout><Payroll /></AppLayout>} />
-            <Route path="/sites/:siteId/inventory" element={<AppLayout><Inventory /></AppLayout>} />
-            <Route path="/sites/:siteId/cashbook" element={<AppLayout><Cashbook /></AppLayout>} />
-            <Route path="/sites/:siteId/settings" element={<AppLayout><Settings /></AppLayout>} />
-            <Route path="/sites/:siteId/reports" element={<AppLayout><Reports /></AppLayout>} />
+            <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
+            <Route path="/users" element={<AppLayout><Users /></AppLayout>} />
+            <Route path="/attendance" element={<AppLayout><Attendance /></AppLayout>} />
+            <Route path="/payroll" element={<AppLayout><Payroll /></AppLayout>} />
+            <Route path="/inventory" element={<AppLayout><Inventory /></AppLayout>} />
+            <Route path="/cashbook" element={<AppLayout><Cashbook /></AppLayout>} />
+            <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+            <Route path="/reports" element={<AppLayout><Reports /></AppLayout>} />
 
             {/* Redirect to home if no match */}
             <Route path="*" element={<NotFound />} />
