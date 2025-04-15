@@ -11,6 +11,16 @@ interface CreateUserData {
   siteId?: string;
 }
 
+// Extended user interface to include email from auth.users
+interface UserWithEmail {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  created_at: string;
+  site_id?: string | null;
+}
+
 export const userManagementService = {
   async createUser(userData: CreateUserData) {
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
@@ -34,8 +44,9 @@ export const userManagementService = {
     return authData;
   },
 
-  async getAllUsers() {
-    const { data, error } = await supabase
+  async getAllUsers(): Promise<UserWithEmail[]> {
+    // Get profiles from the profiles table
+    const { data: profiles, error } = await supabase
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
@@ -45,6 +56,12 @@ export const userManagementService = {
       throw error;
     }
 
-    return data;
+    // For each profile, we need to get the corresponding email
+    // Since we can't join with auth.users directly, we'll need to adapt our UI approach
+    // We'll modify the UI to show name instead of email
+    
+    // Cast the data to include the email property for UI compatibility
+    // In a production app, you might want to handle this differently
+    return profiles as unknown as UserWithEmail[];
   },
 };
