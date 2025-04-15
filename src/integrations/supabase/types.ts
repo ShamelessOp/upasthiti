@@ -17,6 +17,7 @@ export type Database = {
           name: string | null
           role: string
           site_id: string | null
+          site_ids: string[] | null
         }
         Insert: {
           created_at?: string | null
@@ -25,6 +26,7 @@ export type Database = {
           name?: string | null
           role: string
           site_id?: string | null
+          site_ids?: string[] | null
         }
         Update: {
           created_at?: string | null
@@ -33,6 +35,46 @@ export type Database = {
           name?: string | null
           role?: string
           site_id?: string | null
+          site_ids?: string[] | null
+        }
+        Relationships: []
+      }
+      sites: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          location: string
+          name: string
+          start_date: string
+          status: string
+          supervisor_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          location: string
+          name: string
+          start_date: string
+          status: string
+          supervisor_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          location?: string
+          name?: string
+          start_date?: string
+          status?: string
+          supervisor_id?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
