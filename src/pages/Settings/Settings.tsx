@@ -45,7 +45,7 @@ export default function Settings() {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-6">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={user?.photoURL || ''} />
+              <AvatarImage src="" />
               <AvatarFallback>
                 <User className="h-12 w-12" />
               </AvatarFallback>
