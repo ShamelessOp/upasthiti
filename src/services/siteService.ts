@@ -1,5 +1,5 @@
 
-import { Site } from "@/models/site";
+import { Site, SiteStatus, CreateSiteInput, UpdateSiteInput } from "@/models/site";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -16,7 +16,8 @@ export const siteService = {
       throw error;
     }
 
-    return data || [];
+    // Cast the status to ensure it matches the SiteStatus type
+    return (data as unknown as Site[]) || [];
   },
 
   // Get site by ID
@@ -32,11 +33,12 @@ export const siteService = {
       throw error;
     }
 
-    return data;
+    // Cast the data to Site type
+    return data as unknown as Site;
   },
 
   // Create new site
-  async createSite(siteData: Partial<Site>): Promise<Site | null> {
+  async createSite(siteData: CreateSiteInput): Promise<Site | null> {
     const user = (await supabase.auth.getUser()).data.user;
     
     if (!user) {
@@ -47,7 +49,7 @@ export const siteService = {
     const newSite = {
       ...siteData,
       supervisor_id: user.id,
-      status: siteData.status || 'active'
+      status: siteData.status || 'active' as SiteStatus
     };
 
     const { data, error } = await supabase
@@ -62,11 +64,11 @@ export const siteService = {
     }
 
     toast.success("Site created successfully");
-    return data;
+    return data as unknown as Site;
   },
 
   // Update site
-  async updateSite(id: string, siteData: Partial<Site>): Promise<Site | null> {
+  async updateSite(id: string, siteData: UpdateSiteInput): Promise<Site | null> {
     const { data, error } = await supabase
       .from('sites')
       .update(siteData)
@@ -80,7 +82,7 @@ export const siteService = {
     }
 
     toast.success("Site updated successfully");
-    return data;
+    return data as unknown as Site;
   },
 
   // Delete site
@@ -99,4 +101,3 @@ export const siteService = {
     return true;
   }
 };
-
