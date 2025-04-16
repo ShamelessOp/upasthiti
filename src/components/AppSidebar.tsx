@@ -50,85 +50,81 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/sites")}>
+                <Link to="/sites">
+                  <Building className="h-4 w-4" />
+                  <span>Sites</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/attendance")}>
+                <Link to="/attendance">
+                  <Calendar className="h-4 w-4" />
+                  <span>Attendance</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/payroll")}>
+                <Link to="/payroll">
+                  <DollarSign className="h-4 w-4" />
+                  <span>Payroll</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/inventory")}>
+                <Link to="/inventory">
+                  <Package className="h-4 w-4" />
+                  <span>Inventory</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/cashbook")}>
+                <Link to="/cashbook">
+                  <ClipboardList className="h-4 w-4" />
+                  <span>Cashbook</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            {(user?.role === "admin" || user?.role === "supervisor") && (
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/sites")}>
-                  <Link to="/sites">
-                    <Building className="h-4 w-4" />
-                    <span>Sites</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/attendance")}>
-                  <Link to="/attendance">
-                    <Calendar className="h-4 w-4" />
-                    <span>Attendance</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/payroll")}>
-                  <Link to="/payroll">
-                    <DollarSign className="h-4 w-4" />
-                    <span>Payroll</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/inventory")}>
-                  <Link to="/inventory">
-                    <Package className="h-4 w-4" />
-                    <span>Inventory</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/cashbook")}>
-                  <Link to="/cashbook">
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/reports")}>
+                  <Link to="/reports">
                     <ClipboardList className="h-4 w-4" />
-                    <span>Cashbook</span>
+                    <span>Reports</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {(user?.role === "admin" || user?.role === "supervisor") && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname.startsWith("/reports")}>
-                    <Link to="/reports">
-                      <ClipboardList className="h-4 w-4" />
-                      <span>Reports</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
+            )}
+          </SidebarMenu>
         </SidebarGroup>
         
         {user?.role === "admin" && (
           <SidebarGroup>
             <SidebarGroupLabel>Administration</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname.startsWith("/users")}>
-                    <Link to="/users">
-                      <Users className="h-4 w-4" />
-                      <span>Users</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname.startsWith("/settings")}>
-                    <Link to="/settings">
-                      <Settings className="h-4 w-4" />
-                      <span>Settings</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/users")}>
+                  <Link to="/users">
+                    <Users className="h-4 w-4" />
+                    <span>Users</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/settings")}>
+                  <Link to="/settings">
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
           </SidebarGroup>
         )}
       </SidebarContent>
