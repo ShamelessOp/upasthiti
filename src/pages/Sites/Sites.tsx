@@ -9,6 +9,33 @@ import { siteService } from '@/services/siteService';
 import { Site } from '@/models/site';
 import NewSiteDialog from './components/NewSiteDialog';
 
+const exampleSites: Partial<Site>[] = [
+  {
+    id: 'example-1',
+    name: 'Riverside Towers',
+    location: 'Mumbai, Maharashtra',
+    description: 'A 40-story luxury residential complex with modern amenities',
+    status: 'active',
+    start_date: '2024-01-15',
+  },
+  {
+    id: 'example-2',
+    name: 'Green Valley Tech Park',
+    location: 'Bangalore, Karnataka',
+    description: 'Sustainable IT park with LEED certification',
+    status: 'active',
+    start_date: '2024-02-01',
+  },
+  {
+    id: 'example-3',
+    name: 'Metro Station Development',
+    location: 'Delhi, NCR',
+    description: 'Underground metro station with commercial complex',
+    status: 'paused',
+    start_date: '2023-12-10',
+  }
+];
+
 export default function Sites() {
   const navigate = useNavigate();
   const [showNewSiteDialog, setShowNewSiteDialog] = React.useState(false);
@@ -26,12 +53,16 @@ export default function Sites() {
     );
   }
 
+  const displaySites = sites?.length ? sites : exampleSites;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Sites</h2>
-          <p className="text-muted-foreground">Manage your construction sites</p>
+          <p className="text-muted-foreground">
+            {sites?.length ? 'Manage your construction sites' : 'Create your first construction site'}
+          </p>
         </div>
         <Button onClick={() => setShowNewSiteDialog(true)}>
           <Plus className="mr-2 h-4 w-4" />
@@ -40,8 +71,12 @@ export default function Sites() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {sites?.map((site: Site) => (
-          <Card key={site.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/sites/${site.id}`)}>
+        {displaySites.map((site) => (
+          <Card 
+            key={site.id} 
+            className={`cursor-pointer hover:bg-muted/50 ${!sites?.length ? 'opacity-50' : ''}`}
+            onClick={() => sites?.length ? navigate(`/sites/${site.id}`) : setShowNewSiteDialog(true)}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building className="h-5 w-5" />
@@ -55,7 +90,7 @@ export default function Sites() {
             <CardFooter>
               <div className="flex w-full items-center justify-between">
                 <span className="text-sm font-medium">
-                  Started: {new Date(site.start_date).toLocaleDateString()}
+                  Started: {new Date(site.start_date!).toLocaleDateString()}
                 </span>
                 <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                   site.status === 'active' ? 'bg-green-100 text-green-700' :
