@@ -1,160 +1,265 @@
-
-import React from "react";
-import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Calendar, Users, DollarSign, Package, ClipboardList, ArrowRight } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, Clock, DollarSign, Package, UserCheck, Users } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { attendanceService } from "@/services/attendanceService";
 import { siteService } from "@/services/siteService";
-import { workerService } from "@/services/workerService";
-import { Badge } from "@/components/ui/badge";
+import { AttendanceSummary } from "@/models/attendance";
+import { Site } from "@/models/site";
+import { toast } from "sonner";
 
 export default function Dashboard() {
-  const { siteId } = useParams<{ siteId: string }>();
+  const { user } = useAuth();
+  const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummary | null>(null);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [workerCount, setWorkerCount] = useState(0);
+  const [lowStockCount, setLowStockCount] = useState(7);
+  const [weeklyPayroll, setWeeklyPayroll] = useState(284500);
 
-  const { data: site, isLoading: isLoadingSite } = useQuery({
-    queryKey: ["site", siteId],
-    queryFn: () => siteService.getSiteById(siteId!),
-    enabled: !!siteId,
-  });
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
 
-  const { data: workers, isLoading: isLoadingWorkers } = useQuery({
-    queryKey: ["workers", siteId],
-    queryFn: () => workerService.getWorkers({ siteId }),
-    enabled: !!siteId,
-  });
+  const loadDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      // Load attendance summary
+      const summary = await attendanceService.getAttendanceSummary();
+      setAttendanceSummary(summary);
+      
+      // Load sites
+      const siteData = await siteService.getAllSites();
+      setSites(siteData);
+      
+      // Get worker count from database later
+      setWorkerCount(siteData.length * 25); // Temporary calculation
+    } catch (error) {
+      toast.error("Failed to load dashboard data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  if (!siteId) return <div>Site ID not found</div>;
-
-  if (isLoadingSite || isLoadingWorkers) {
-    return (
-      <div className="flex h-[200px] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!site) {
-    return (
-      <div className="flex h-[200px] flex-col items-center justify-center">
-        <p className="mb-4">Site not found</p>
-        <Button asChild>
-          <Link to="/sites">Back to Sites</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  const activeWorkers = workers?.filter(w => w.status === 'active').length || 0;
+  // Format currency values
+  const formatCurrency = (value: number) => {
+    return `₹${value.toLocaleString()}`;
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in">
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">{site.name}</h2>
-            <p className="text-muted-foreground">{site.location}</p>
-          </div>
-          <Badge className={`
-            ${site.status === 'active' ? 'bg-green-100 text-green-700' : 
-              site.status === 'paused' ? 'bg-yellow-100 text-yellow-700' : 
-              'bg-gray-100 text-gray-700'}
-          `}>
-            {site.status}
-          </Badge>
-        </div>
-        <div className="mt-2">
-          {site.description && <p>{site.description}</p>}
-          <div className="flex gap-4 mt-2">
-            <p className="text-sm text-muted-foreground">
-              Start Date: {new Date(site.start_date).toLocaleDateString()}
-            </p>
-            {site.end_date && (
-              <p className="text-sm text-muted-foreground">
-                End Date: {new Date(site.end_date).toLocaleDateString()}
-              </p>
-            )}
-          </div>
-        </div>
+        <h2 className="text-3xl font-bold tracking-tight">Welcome, {user?.name}</h2>
+        <p className="text-muted-foreground">
+          Here's an overview of your construction site management
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Workers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{workers?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {activeWorkers} active workers
-            </p>
-            <Button asChild variant="ghost" size="sm" className="mt-2 w-full">
-              <Link to={`/sites/${siteId}/workers`}>
-                Manage Workers
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="attendance">Attendance</TabsTrigger>
+          <TabsTrigger value="payroll">Payroll</TabsTrigger>
+          <TabsTrigger value="inventory">Inventory</TabsTrigger>
+        </TabsList>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Attendance</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground">
-              Manage daily attendance
-            </p>
-            <Button asChild variant="ghost" size="sm" className="mt-2 w-full">
-              <Link to={`/sites/${siteId}/attendance`}>
-                Take Attendance
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Workers</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{isLoading ? "..." : workerCount}</div>
+                <p className="text-xs text-muted-foreground">
+                  Across {sites.length} active sites
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Today's Attendance</CardTitle>
+                <UserCheck className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {isLoading ? "..." : attendanceSummary?.present || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {isLoading 
+                    ? "Loading..." 
+                    : attendanceSummary 
+                      ? `${((attendanceSummary.present / attendanceSummary.totalWorkers) * 100).toFixed(1)}% of total workers` 
+                      : "No data available"}
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Weekly Payroll</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(weeklyPayroll)}</div>
+                <p className="text-xs text-muted-foreground">
+                  +₹24,000 from last week
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{lowStockCount}</div>
+                <p className="text-xs text-muted-foreground">
+                  Items need reordering
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4">
+              <CardHeader>
+                <CardTitle>Recent Attendance</CardTitle>
+                <CardDescription>
+                  Attendance trends over the last 7 days
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pl-2">
+                {isLoading ? (
+                  <div className="h-[200px] w-full flex items-center justify-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                  </div>
+                ) : (
+                  <div className="h-[200px] w-full rounded-md bg-muted/30 flex items-center justify-center">
+                    <p className="text-muted-foreground">Attendance Chart</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Recent Activities</CardTitle>
+                <CardDescription>
+                  Latest system activities
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-full bg-primary/10 p-2">
+                      <UserCheck className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Attendance Marked</p>
+                      <p className="text-xs text-muted-foreground">
+                        Site A: 45 workers checked in
+                      </p>
+                      <p className="text-xs text-muted-foreground">30 minutes ago</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-full bg-primary/10 p-2">
+                      <DollarSign className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Payroll Generated</p>
+                      <p className="text-xs text-muted-foreground">
+                        Weekly payroll for Site B processed
+                      </p>
+                      <p className="text-xs text-muted-foreground">2 hours ago</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-full bg-primary/10 p-2">
+                      <Package className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Inventory Updated</p>
+                      <p className="text-xs text-muted-foreground">
+                        50 bags of cement added to inventory
+                      </p>
+                      <p className="text-xs text-muted-foreground">5 hours ago</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-full bg-primary/10 p-2">
+                      <Clock className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Overtime Recorded</p>
+                      <p className="text-xs text-muted-foreground">
+                        15 workers logged overtime hours
+                      </p>
+                      <p className="text-xs text-muted-foreground">Yesterday</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Payroll</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground">
-              Manage worker payments
-            </p>
-            <Button asChild variant="ghost" size="sm" className="mt-2 w-full">
-              <Link to={`/sites/${siteId}/payroll`}>
-                Process Payroll
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <TabsContent value="attendance" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Attendance Overview</CardTitle>
+              <CardDescription>
+                View and manage attendance records
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full rounded-md bg-muted/30 flex items-center justify-center">
+                <p className="text-muted-foreground">Detailed attendance data will be displayed here</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Reports</CardTitle>
-            <ClipboardList className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground">
-              View site analytics
-            </p>
-            <Button asChild variant="ghost" size="sm" className="mt-2 w-full">
-              <Link to={`/sites/${siteId}/reports`}>
-                View Reports
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+        <TabsContent value="payroll" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payroll Summary</CardTitle>
+              <CardDescription>
+                Review and process payroll information
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full rounded-md bg-muted/30 flex items-center justify-center">
+                <p className="text-muted-foreground">Payroll data and reports will be displayed here</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="inventory" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Inventory Status</CardTitle>
+              <CardDescription>
+                Monitor inventory levels and manage stock
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full rounded-md bg-muted/30 flex items-center justify-center">
+                <p className="text-muted-foreground">Inventory tracking information will be displayed here</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
