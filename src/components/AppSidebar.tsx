@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -14,7 +14,6 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
 import {
   Building,
   Calendar,
@@ -32,6 +31,9 @@ import {
 export function AppSidebar() {
   const { pathname } = useLocation();
   const { user, logout } = useAuth();
+  const { siteId } = useParams();
+  
+  const showSiteMenu = pathname.includes('/sites/') && siteId;
   
   return (
     <Sidebar className="border-r border-border">
@@ -49,67 +51,91 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>Sites</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/sites")}>
+              <SidebarMenuButton asChild isActive={pathname === "/sites"}>
                 <Link to="/sites">
                   <Building className="h-4 w-4" />
-                  <span>Sites</span>
+                  <span>All Sites</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/attendance")}>
-                <Link to="/attendance">
-                  <Calendar className="h-4 w-4" />
-                  <span>Attendance</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/payroll")}>
-                <Link to="/payroll">
-                  <DollarSign className="h-4 w-4" />
-                  <span>Payroll</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/inventory")}>
-                <Link to="/inventory">
-                  <Package className="h-4 w-4" />
-                  <span>Inventory</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/cashbook")}>
-                <Link to="/cashbook">
-                  <ClipboardList className="h-4 w-4" />
-                  <span>Cashbook</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            {(user?.role === "admin" || user?.role === "supervisor") && (
+          </SidebarMenu>
+        </SidebarGroup>
+        
+        {showSiteMenu && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Site Management</SidebarGroupLabel>
+            <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/reports")}>
-                  <Link to="/reports">
-                    <ClipboardList className="h-4 w-4" />
-                    <span>Reports</span>
+                <SidebarMenuButton asChild isActive={pathname === `/sites/${siteId}`}>
+                  <Link to={`/sites/${siteId}`}>
+                    <Building className="h-4 w-4" />
+                    <span>Dashboard</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            )}
-          </SidebarMenu>
-        </SidebarGroup>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === `/sites/${siteId}/workers`}>
+                  <Link to={`/sites/${siteId}/workers`}>
+                    <Users className="h-4 w-4" />
+                    <span>Workers</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === `/sites/${siteId}/attendance`}>
+                  <Link to={`/sites/${siteId}/attendance`}>
+                    <Calendar className="h-4 w-4" />
+                    <span>Attendance</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === `/sites/${siteId}/payroll`}>
+                  <Link to={`/sites/${siteId}/payroll`}>
+                    <DollarSign className="h-4 w-4" />
+                    <span>Payroll</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === `/sites/${siteId}/inventory`}>
+                  <Link to={`/sites/${siteId}/inventory`}>
+                    <Package className="h-4 w-4" />
+                    <span>Inventory</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === `/sites/${siteId}/cashbook`}>
+                  <Link to={`/sites/${siteId}/cashbook`}>
+                    <ClipboardList className="h-4 w-4" />
+                    <span>Cashbook</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              {(user?.role === "admin" || user?.role === "supervisor") && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === `/sites/${siteId}/reports`}>
+                    <Link to={`/sites/${siteId}/reports`}>
+                      <ClipboardList className="h-4 w-4" />
+                      <span>Reports</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
         
         {user?.role === "admin" && (
           <SidebarGroup>
             <SidebarGroupLabel>Administration</SidebarGroupLabel>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/users")}>
+                <SidebarMenuButton asChild isActive={pathname === "/users"}>
                   <Link to="/users">
                     <Users className="h-4 w-4" />
                     <span>Users</span>
@@ -117,7 +143,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/settings")}>
+                <SidebarMenuButton asChild isActive={pathname === "/settings"}>
                   <Link to="/settings">
                     <Settings className="h-4 w-4" />
                     <span>Settings</span>

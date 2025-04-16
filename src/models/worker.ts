@@ -22,4 +22,3 @@ export interface WorkerFilter {
   status?: "active" | "inactive";
   skill?: string;
 }
-

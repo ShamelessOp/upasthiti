@@ -3,8 +3,9 @@ import React, { ReactNode } from 'react';
 import { AppSidebar } from './AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -13,6 +14,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, requireAuth = true }: AppLayoutProps) {
   const { isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
 
   if (requireAuth && !loading && !isAuthenticated) {
     return <Navigate to="/login" />;
@@ -29,7 +31,7 @@ export function AppLayout({ children, requireAuth = true }: AppLayoutProps) {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        {isAuthenticated && <AppSidebar />}
+        <AppSidebar />
         <main className="flex-1 overflow-y-auto">
           <div className="sticky top-0 z-10 flex h-14 items-center border-b border-border bg-background px-4">
             <SidebarTrigger className="mr-4">

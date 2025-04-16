@@ -39,16 +39,16 @@ export const siteService = {
 
   // Create new site
   async createSite(siteData: CreateSiteInput): Promise<Site | null> {
-    const user = (await supabase.auth.getUser()).data.user;
+    const { data: userData, error: userError } = await supabase.auth.getUser();
     
-    if (!user) {
-      toast.error("User not authenticated");
+    if (userError || !userData.user) {
+      toast.error("User not authenticated. Please log in.");
       throw new Error("User not authenticated");
     }
 
     const newSite = {
       ...siteData,
-      supervisor_id: user.id,
+      supervisor_id: userData.user.id,
       status: siteData.status || 'active' as SiteStatus
     };
 
