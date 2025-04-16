@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,9 +33,8 @@ export default function Dashboard() {
       const siteData = await siteService.getAllSites();
       setSites(siteData);
       
-      // Calculate total workers count
-      const totalWorkers = siteData.reduce((sum, site) => sum + site.workersCount, 0);
-      setWorkerCount(totalWorkers);
+      // Get worker count from database later
+      setWorkerCount(siteData.length * 25); // Temporary calculation
     } catch (error) {
       toast.error("Failed to load dashboard data");
     } finally {

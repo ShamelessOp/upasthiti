@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,16 +27,12 @@ export default function Attendance() {
     loadSites();
   }, []);
 
-  // Load attendance records when filter changes
-  useEffect(() => {
-    loadAttendanceRecords();
-  }, [selectedSite, selectedDate]);
-
   const loadSites = async () => {
     try {
       const siteData = await siteService.getAllSites();
       setSites(siteData);
     } catch (error) {
+      console.error("Failed to load sites:", error);
       toast.error("Failed to load sites");
     }
   };

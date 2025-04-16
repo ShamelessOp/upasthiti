@@ -6,11 +6,11 @@ export interface Site {
   name: string;
   location: string;
   description?: string;
-  supervisor: string;
-  workersCount: number;
   status: "active" | "completed" | "paused";
-  startDate: string;
-  endDate?: string;
-  createdAt: string;
-  updatedAt: string;
+  start_date: string;
+  end_date?: string;
+  supervisor_id: string;
+  created_at: string;
+  updated_at: string;
 }
+

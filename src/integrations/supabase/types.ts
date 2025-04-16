@@ -9,6 +9,66 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      attendance: {
+        Row: {
+          check_in_time: string | null
+          check_out_time: string | null
+          created_at: string | null
+          created_by: string
+          date: string
+          id: string
+          overtime_hours: number | null
+          site_id: string
+          status: string
+          updated_at: string | null
+          updated_by: string
+          worker_id: string
+        }
+        Insert: {
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string | null
+          created_by: string
+          date: string
+          id?: string
+          overtime_hours?: number | null
+          site_id: string
+          status: string
+          updated_at?: string | null
+          updated_by: string
+          worker_id: string
+        }
+        Update: {
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string | null
+          created_by?: string
+          date?: string
+          id?: string
+          overtime_hours?: number | null
+          site_id?: string
+          status?: string
+          updated_at?: string | null
+          updated_by?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -17,6 +77,7 @@ export type Database = {
           name: string | null
           role: string
           site_id: string | null
+          site_ids: string[] | null
         }
         Insert: {
           created_at?: string | null
@@ -25,6 +86,7 @@ export type Database = {
           name?: string | null
           role: string
           site_id?: string | null
+          site_ids?: string[] | null
         }
         Update: {
           created_at?: string | null
@@ -33,8 +95,101 @@ export type Database = {
           name?: string | null
           role?: string
           site_id?: string | null
+          site_ids?: string[] | null
         }
         Relationships: []
+      }
+      sites: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          location: string
+          name: string
+          start_date: string
+          status: string
+          supervisor_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          location: string
+          name: string
+          start_date: string
+          status: string
+          supervisor_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          location?: string
+          name?: string
+          start_date?: string
+          status?: string
+          supervisor_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      workers: {
+        Row: {
+          address: string | null
+          contact_number: string
+          created_at: string | null
+          daily_wage: number
+          id: string
+          joining_date: string
+          name: string
+          site_id: string
+          skills: string[] | null
+          status: string
+          updated_at: string | null
+          worker_id: string
+        }
+        Insert: {
+          address?: string | null
+          contact_number: string
+          created_at?: string | null
+          daily_wage: number
+          id?: string
+          joining_date: string
+          name: string
+          site_id: string
+          skills?: string[] | null
+          status: string
+          updated_at?: string | null
+          worker_id: string
+        }
+        Update: {
+          address?: string | null
+          contact_number?: string
+          created_at?: string | null
+          daily_wage?: number
+          id?: string
+          joining_date?: string
+          name?: string
+          site_id?: string
+          skills?: string[] | null
+          status?: string
+          updated_at?: string | null
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workers_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

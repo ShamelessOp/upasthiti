@@ -3,18 +3,17 @@
 
 export interface Worker {
   id: string;
-  workerId: string;
+  worker_id: string;
   name: string;
-  contactNumber: string;
+  contact_number: string;
   address?: string;
   skills: string[];
-  dailyWage: number;
-  joiningDate: string;
-  siteId: string;
-  siteName: string;
+  daily_wage: number;
+  joining_date: string;
+  site_id: string;
   status: "active" | "inactive";
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface WorkerFilter {
@@ -23,3 +22,4 @@ export interface WorkerFilter {
   status?: "active" | "inactive";
   skill?: string;
 }
+
