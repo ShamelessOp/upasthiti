@@ -2,15 +2,19 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Plus, Search } from "lucide-react";
+import { Calendar, FileSpreadsheet, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AttendanceFilter, AttendanceRecord } from "@/models/attendance";
 import { attendanceService } from "@/services/attendanceService";
 import { siteService } from "@/services/siteService";
+import { workerService } from "@/services/workerService";
 import { Site } from "@/models/site";
+import { Worker } from "@/models/worker";
 import { toast } from "sonner";
+import { NewWorkerDialog } from "./components/NewWorkerDialog";
+import * as XLSX from 'xlsx';
 
 export default function Attendance() {
   const [sites, setSites] = useState<Site[]>([]);
@@ -21,8 +25,8 @@ export default function Attendance() {
   const [isLoading, setIsLoading] = useState(false);
   const [presentCount, setPresentCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [workers, setWorkers] = useState<Worker[]>([]);
 
-  // Load sites on component mount
   useEffect(() => {
     loadSites();
   }, []);
@@ -34,6 +38,22 @@ export default function Attendance() {
     } catch (error) {
       console.error("Failed to load sites:", error);
       toast.error("Failed to load sites");
+    }
+  };
+
+  useEffect(() => {
+    if (selectedSite !== "all") {
+      loadWorkers();
+    }
+  }, [selectedSite]);
+
+  const loadWorkers = async () => {
+    try {
+      const workerData = await workerService.getAllWorkers({ siteId: selectedSite });
+      setWorkers(workerData);
+    } catch (error) {
+      console.error("Failed to load workers:", error);
+      toast.error("Failed to load workers");
     }
   };
 
@@ -52,7 +72,6 @@ export default function Attendance() {
       const records = await attendanceService.getAttendance(filter);
       setAttendanceRecords(records);
       
-      // Calculate present count
       const present = records.filter(r => r.status === "Present").length;
       setPresentCount(present);
       setTotalCount(records.length);
@@ -85,6 +104,24 @@ export default function Attendance() {
     }
   };
 
+  const handleExportToExcel = () => {
+    const data = attendanceRecords.map(record => ({
+      'Date': record.date,
+      'Worker ID': record.workerId,
+      'Worker Name': record.workerName,
+      'Site': record.siteName,
+      'Status': record.status,
+      'Check In': record.checkInTime,
+      'Check Out': record.checkOutTime,
+      'Overtime Hours': record.overtimeHours
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+    XLSX.writeFile(wb, `attendance_${selectedDate}.xlsx`);
+  };
+
   const formatTime = (time: string) => {
     if (!time) return "-";
     return time;
@@ -99,10 +136,15 @@ export default function Attendance() {
             Track and manage worker attendance across sites
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Record New
-        </Button>
+        <div className="flex gap-2">
+          {selectedSite !== "all" && (
+            <NewWorkerDialog siteId={selectedSite} onWorkerAdded={loadWorkers} />
+          )}
+          <Button variant="outline" onClick={handleExportToExcel}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Export to Excel
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="daily" className="space-y-4">
