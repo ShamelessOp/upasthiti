@@ -11,11 +11,10 @@ import { AppLayout } from "@/components/AppLayout";
 import Login from "@/pages/Auth/Login";
 import Signup from "@/pages/Auth/Signup";
 
-// Dashboard Pages
+// Main Pages
+import Sites from "@/pages/Sites/Sites";
 import Dashboard from "@/pages/Dashboard/Dashboard";
 import Users from "@/pages/Users/Users";
-
-// Feature Pages
 import Attendance from "@/pages/Attendance/Attendance";
 import Payroll from "@/pages/Payroll/Payroll";
 import Inventory from "@/pages/Inventory/Inventory";
@@ -41,7 +40,9 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             
             {/* Protected Routes */}
-            <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
+            <Route path="/" element={<Navigate to="/sites" replace />} />
+            <Route path="/sites" element={<AppLayout><Sites /></AppLayout>} />
+            <Route path="/sites/:siteId/*" element={<AppLayout><Dashboard /></AppLayout>} />
             <Route path="/users" element={<AppLayout><Users /></AppLayout>} />
             <Route path="/attendance" element={<AppLayout><Attendance /></AppLayout>} />
             <Route path="/payroll" element={<AppLayout><Payroll /></AppLayout>} />

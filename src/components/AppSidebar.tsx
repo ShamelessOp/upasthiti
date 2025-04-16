@@ -6,7 +6,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
@@ -17,12 +16,12 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import {
+  Building,
   Calendar,
   ChevronsLeft,
   ChevronsRight,
   ClipboardList,
   DollarSign,
-  Home,
   LogOut,
   Package,
   Settings,
@@ -54,10 +53,10 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === "/"}>
-                  <Link to="/">
-                    <Home className="h-4 w-4" />
-                    <span>Dashboard</span>
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/sites")}>
+                  <Link to="/sites">
+                    <Building className="h-4 w-4" />
+                    <span>Sites</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
