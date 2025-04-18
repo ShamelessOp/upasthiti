@@ -2,6 +2,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { User, UserRole } from "@/models/user";
 import { authService } from "@/services/authService";
+import { supabase } from "@/integrations/supabase/client";
 
 // Define auth context interface
 interface AuthContextType {
@@ -28,11 +29,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Check for existing session on mount
+  // Set up auth state listener
   useEffect(() => {
-    const currentUser = authService.getCurrentUser();
-    setUser(currentUser);
-    setLoading(false);
+    // First set up the auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("Auth state changed:", event);
+        if (session && session.user) {
+          setUser(session.user as unknown as User);
+          localStorage.setItem("user", JSON.stringify(session.user));
+          localStorage.setItem("token", session.access_token);
+        } else {
+          setUser(null);
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+        }
+      }
+    );
+
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session && session.user) {
+        console.log("Existing session found:", session.user);
+        setUser(session.user as unknown as User);
+        localStorage.setItem("user", JSON.stringify(session.user));
+        localStorage.setItem("token", session.access_token);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Login function
@@ -60,8 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Logout function
-  const logout = () => {
-    authService.logout();
+  const logout = async () => {
+    await authService.logout();
     setUser(null);
   };
 

@@ -1,41 +1,7 @@
 
 import { User, UserCredentials, UserRegistration, UserRole } from "@/models/user";
-import { apiRequest } from "./api";
-import { localStorageService } from "./localStorage";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-// In-memory mock user database
-const MOCK_USERS = [
-  {
-    id: "1",
-    name: "Admin User",
-    email: "admin@upastithi.com",
-    password: "password123",
-    role: "admin" as UserRole,
-    createdAt: "2025-01-01T00:00:00Z",
-    lastLogin: null,
-  },
-  {
-    id: "2",
-    name: "Site Manager",
-    email: "manager@upastithi.com",
-    password: "password123",
-    role: "siteManager" as UserRole,
-    siteId: "1",
-    createdAt: "2025-01-15T00:00:00Z",
-    lastLogin: null,
-  },
-  {
-    id: "3",
-    name: "Site Supervisor",
-    email: "supervisor@upastithi.com",
-    password: "password123",
-    role: "supervisor" as UserRole,
-    siteId: "2",
-    createdAt: "2025-02-01T00:00:00Z",
-    lastLogin: null,
-  },
-];
 
 // Local storage keys
 const USER_STORAGE_KEY = "user";
@@ -50,78 +16,98 @@ export const authService = {
 
   // Get current authenticated user
   getCurrentUser(): User | null {
-    return localStorageService.get<User>(USER_STORAGE_KEY);
+    // First try to get from localStorage for quick access
+    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
+    if (storedUser) {
+      return JSON.parse(storedUser);
+    }
+
+    // Then check Supabase session
+    const session = supabase.auth.getSession();
+    if (session) {
+      return session.data.session?.user as unknown as User || null;
+    }
+    
+    return null;
   },
 
   // Login user
   async login(credentials: UserCredentials): Promise<User | null> {
-    return apiRequest<User>(async () => {
-      // Find user by email and password
-      const user = MOCK_USERS.find(
-        u => u.email === credentials.email && u.password === credentials.password
-      );
-      
-      if (!user) {
-        throw new Error("Invalid email or password");
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (error) {
+        toast.error("Login failed: " + error.message);
+        throw error;
       }
-      
-      // Update last login time
-      const nowIso = new Date().toISOString();
-      
-      // Create user session object (without password)
-      const { password: _, ...userSession } = {
-        ...user,
-        lastLogin: nowIso
-      };
-      
-      // Store in local storage
-      localStorageService.set(USER_STORAGE_KEY, userSession);
-      localStorageService.set(TOKEN_STORAGE_KEY, `mock-token-${userSession.id}`);
-      
-      toast.success("Successfully logged in");
-      return userSession;
-    }, "Login failed").then(response => response.data);
+
+      if (data && data.user) {
+        // Store user in local storage for quick access
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
+        localStorage.setItem(TOKEN_STORAGE_KEY, data.session?.access_token || '');
+        
+        toast.success("Successfully logged in");
+        return data.user as unknown as User;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   },
 
   // Register new user
   async register(userData: UserRegistration): Promise<User | null> {
-    return apiRequest<User>(async () => {
-      // Check if email is already in use
-      if (MOCK_USERS.some(u => u.email === userData.email)) {
-        throw new Error("Email already in use");
-      }
-      
-      // Create new user
-      const nowIso = new Date().toISOString();
-      const newUser = {
-        id: `${MOCK_USERS.length + 1}`,
-        name: userData.name,
+    try {
+      const { data, error } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
-        role: userData.role,
-        createdAt: nowIso,
-        lastLogin: nowIso,
-      };
-      
-      // Add to mock database (in a real app, this would be an API call)
-      MOCK_USERS.push(newUser);
-      
-      // Create user session object (without password)
-      const { password: _, ...userSession } = newUser;
-      
-      // Store in local storage
-      localStorageService.set(USER_STORAGE_KEY, userSession);
-      localStorageService.set(TOKEN_STORAGE_KEY, `mock-token-${userSession.id}`);
-      
-      toast.success("Account created successfully");
-      return userSession;
-    }, "Registration failed").then(response => response.data);
+        options: {
+          data: {
+            name: userData.name,
+            role: userData.role
+          }
+        }
+      });
+
+      if (error) {
+        toast.error("Registration failed: " + error.message);
+        throw error;
+      }
+
+      if (data && data.user) {
+        // Store user in local storage for quick access
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
+        if (data.session) {
+          localStorage.setItem(TOKEN_STORAGE_KEY, data.session.access_token);
+        }
+        
+        toast.success("Account created successfully");
+        return data.user as unknown as User;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw error;
+    }
   },
 
   // Logout user
-  logout(): void {
-    localStorageService.remove(USER_STORAGE_KEY);
-    localStorageService.remove(TOKEN_STORAGE_KEY);
+  async logout(): Promise<void> {
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      toast.error("Logout failed: " + error.message);
+      throw error;
+    }
+    
+    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
     toast.success("Successfully logged out");
   },
 
@@ -139,6 +125,6 @@ export const authService = {
 
   // Get authentication token
   getToken(): string | null {
-    return localStorageService.get<string>(TOKEN_STORAGE_KEY);
+    return localStorage.getItem(TOKEN_STORAGE_KEY);
   }
 };
