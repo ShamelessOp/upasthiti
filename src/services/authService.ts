@@ -19,47 +19,60 @@ export const authService = {
     // First try to get from localStorage for quick access
     const storedUser = localStorage.getItem(USER_STORAGE_KEY);
     if (storedUser) {
-      return JSON.parse(storedUser);
+      try {
+        return JSON.parse(storedUser);
+      } catch (e) {
+        console.error("Error parsing user from localStorage:", e);
+        return null;
+      }
     }
-
-    // Then check Supabase session - this method is synchronous
-    // We can't await here since this method is synchronous
-    // Instead we'll just return null and let the auth state listener handle updating the user
     return null;
   },
 
   // Login user
   async login(credentials: UserCredentials): Promise<User | null> {
     try {
+      console.log("Attempting to login with email:", credentials.email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       });
 
       if (error) {
+        console.error("Login failed:", error.message);
         toast.error("Login failed: " + error.message);
-        throw error;
+        throw new Error(error.message);
       }
 
       if (data && data.user) {
+        console.log("Login successful:", data.user.email);
         // Store user in local storage for quick access
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
-        localStorage.setItem(TOKEN_STORAGE_KEY, data.session?.access_token || '');
+        
+        if (data.session) {
+          localStorage.setItem(TOKEN_STORAGE_KEY, data.session.access_token);
+        }
         
         toast.success("Successfully logged in");
         return data.user as unknown as User;
       }
 
-      return null;
+      throw new Error("No user data returned from authentication");
     } catch (error) {
       console.error("Login error:", error);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("Failed to login. Please try again.");
     }
   },
 
   // Register new user
   async register(userData: UserRegistration): Promise<User | null> {
     try {
+      console.log("Attempting to register user:", userData.email);
+      
       const { data, error } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
@@ -72,13 +85,16 @@ export const authService = {
       });
 
       if (error) {
+        console.error("Registration failed:", error.message);
         toast.error("Registration failed: " + error.message);
-        throw error;
+        throw new Error(error.message);
       }
 
       if (data && data.user) {
+        console.log("Registration successful:", data.user.email);
         // Store user in local storage for quick access
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
+        
         if (data.session) {
           localStorage.setItem(TOKEN_STORAGE_KEY, data.session.access_token);
         }
@@ -87,25 +103,34 @@ export const authService = {
         return data.user as unknown as User;
       }
 
-      return null;
+      throw new Error("No user data returned from registration");
     } catch (error) {
       console.error("Registration error:", error);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("Failed to register. Please try again.");
     }
   },
 
   // Logout user
   async logout(): Promise<void> {
-    const { error } = await supabase.auth.signOut();
-    
-    if (error) {
-      toast.error("Logout failed: " + error.message);
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Logout failed:", error.message);
+        toast.error("Logout failed: " + error.message);
+        throw error;
+      }
+      
+      localStorage.removeItem(USER_STORAGE_KEY);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      toast.success("Successfully logged out");
+    } catch (error) {
+      console.error("Logout error:", error);
       throw error;
     }
-    
-    localStorage.removeItem(USER_STORAGE_KEY);
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-    toast.success("Successfully logged out");
   },
 
   // Check if user has specific role

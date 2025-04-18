@@ -3,6 +3,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { User, UserRole } from "@/models/user";
 import { authService } from "@/services/authService";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Define auth context interface
 interface AuthContextType {
@@ -36,10 +37,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, session) => {
         console.log("Auth state changed:", event);
         if (session && session.user) {
+          console.log("User authenticated:", session.user.email);
           setUser(session.user as unknown as User);
           localStorage.setItem("user", JSON.stringify(session.user));
           localStorage.setItem("token", session.access_token);
         } else {
+          console.log("User not authenticated");
           setUser(null);
           localStorage.removeItem("user");
           localStorage.removeItem("token");
@@ -50,10 +53,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Then check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session && session.user) {
-        console.log("Existing session found:", session.user);
+        console.log("Existing session found for:", session.user.email);
         setUser(session.user as unknown as User);
         localStorage.setItem("user", JSON.stringify(session.user));
         localStorage.setItem("token", session.access_token);
+      } else {
+        console.log("No existing session found");
       }
       setLoading(false);
     });
@@ -68,8 +73,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     
     try {
+      console.log("Login attempt for:", email);
       const loggedInUser = await authService.login({ email, password });
       setUser(loggedInUser);
+    } catch (error) {
+      console.error("Login error in context:", error);
+      throw error; // Re-throw to be handled by the component
     } finally {
       setLoading(false);
     }
@@ -80,8 +89,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     
     try {
+      console.log("Signup attempt for:", email);
       const newUser = await authService.register({ name, email, password, role });
       setUser(newUser);
+    } catch (error) {
+      console.error("Signup error in context:", error);
+      throw error; // Re-throw to be handled by the component
     } finally {
       setLoading(false);
     }
@@ -89,8 +102,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Logout function
   const logout = async () => {
-    await authService.logout();
-    setUser(null);
+    try {
+      await authService.logout();
+      setUser(null);
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Still clear user state even if logout fails on API
+      setUser(null);
+    }
   };
 
   return (
