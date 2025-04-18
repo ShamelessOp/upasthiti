@@ -1,83 +1,32 @@
 
-import React, { useState, useEffect } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const { login, isAuthenticated, loading, refreshSession } = useAuth();
-  const navigate = useNavigate();
-
-  // Check if user is already authenticated on mount or when auth state changes
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        // Double-check session with Supabase directly
-        const { data } = await supabase.auth.getSession();
-        console.log("Login page session check:", {
-          hasSession: !!data.session,
-          contextAuth: isAuthenticated,
-          sessionUser: data.session?.user?.email
-        });
-        
-        if (data.session || isAuthenticated) {
-          console.log("User already authenticated, redirecting to sites");
-          navigate("/sites");
-        }
-      } catch (err) {
-        console.error("Error checking session:", err);
-      }
-    };
-    
-    if (!loading) {
-      checkSession();
-    }
-  }, [isAuthenticated, loading, navigate]);
+  const { login, isAuthenticated } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setIsSubmitting(true);
     
     try {
-      console.log("Attempting login with:", email);
       await login(email, password);
-      
-      // Verify login was successful with a direct session check
-      const { data } = await supabase.auth.getSession();
-      
-      if (data.session) {
-        console.log("Login successful, session verified");
-        toast.success("Login successful");
-        
-        // Force a session refresh to ensure context is updated
-        await refreshSession();
-        navigate("/sites");
-      } else {
-        console.error("Login appeared to succeed but no session was created");
-        setError("Login failed: No session was created. Please try again.");
-      }
-    } catch (err) {
-      console.error("Login error:", err);
-      setError(err instanceof Error ? err.message : "Failed to login. Please check your credentials.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // If user is already authenticated and not in loading state, redirect to dashboard
-  if (!loading && isAuthenticated) {
-    console.log("Login component: Already authenticated, redirecting to sites");
-    return <Navigate to="/sites" />;
+  // If user is already authenticated, redirect to dashboard
+  if (isAuthenticated) {
+    return <Navigate to="/" />;
   }
 
   return (
@@ -92,11 +41,6 @@ export default function Login() {
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
-              {error && (
-                <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                  {error}
-                </div>
-              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
