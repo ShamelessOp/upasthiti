@@ -14,21 +14,27 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const { login, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated, loading, refreshSession } = useAuth();
   const navigate = useNavigate();
 
-  // Check if user is already authenticated on mount
+  // Check if user is already authenticated on mount or when auth state changes
   useEffect(() => {
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      console.log("Login page session check:", {
-        hasSession: !!data.session,
-        contextAuth: isAuthenticated
-      });
-      
-      if (data.session || isAuthenticated) {
-        console.log("User already authenticated, redirecting to sites");
-        navigate("/sites");
+      try {
+        // Double-check session with Supabase directly
+        const { data } = await supabase.auth.getSession();
+        console.log("Login page session check:", {
+          hasSession: !!data.session,
+          contextAuth: isAuthenticated,
+          sessionUser: data.session?.user?.email
+        });
+        
+        if (data.session || isAuthenticated) {
+          console.log("User already authenticated, redirecting to sites");
+          navigate("/sites");
+        }
+      } catch (err) {
+        console.error("Error checking session:", err);
       }
     };
     
@@ -43,10 +49,23 @@ export default function Login() {
     setIsSubmitting(true);
     
     try {
+      console.log("Attempting login with:", email);
       await login(email, password);
-      console.log("Login successful");
-      toast.success("Login successful");
-      navigate("/sites");
+      
+      // Verify login was successful with a direct session check
+      const { data } = await supabase.auth.getSession();
+      
+      if (data.session) {
+        console.log("Login successful, session verified");
+        toast.success("Login successful");
+        
+        // Force a session refresh to ensure context is updated
+        await refreshSession();
+        navigate("/sites");
+      } else {
+        console.error("Login appeared to succeed but no session was created");
+        setError("Login failed: No session was created. Please try again.");
+      }
     } catch (err) {
       console.error("Login error:", err);
       setError(err instanceof Error ? err.message : "Failed to login. Please check your credentials.");
