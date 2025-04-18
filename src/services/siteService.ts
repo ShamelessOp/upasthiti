@@ -47,17 +47,18 @@ export const siteService = {
   async createSite(siteData: CreateSiteInput): Promise<Site | null> {
     console.log("Creating new site:", siteData);
     
-    const user = (await supabase.auth.getUser()).data.user;
+    // First check if the user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
     
-    if (!user) {
+    if (!session || !session.user) {
       console.error("User not authenticated");
-      toast.error("User not authenticated");
+      toast.error("You must be logged in to create a site");
       throw new Error("User not authenticated");
     }
 
     const newSite = {
       ...siteData,
-      supervisor_id: user.id,
+      supervisor_id: session.user.id,
       status: siteData.status || 'active' as SiteStatus
     };
 
