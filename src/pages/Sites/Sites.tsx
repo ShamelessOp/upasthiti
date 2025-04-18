@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Building, Loader2, Plus } from 'lucide-react';
@@ -8,10 +8,33 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { siteService } from '@/services/siteService';
 import { Site } from '@/models/site';
 import NewSiteDialog from './components/NewSiteDialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function Sites() {
   const navigate = useNavigate();
   const [showNewSiteDialog, setShowNewSiteDialog] = React.useState(false);
+  const { isAuthenticated, user } = useAuth();
+  
+  useEffect(() => {
+    // Verify auth status specifically for this page
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      console.log("Sites page auth check:", {
+        hasSession: !!data.session,
+        contextAuth: isAuthenticated,
+        email: user?.email
+      });
+      
+      if (!data.session && !isAuthenticated) {
+        toast.error("Authentication error. Please log in again.");
+        navigate("/login");
+      }
+    };
+    
+    checkAuth();
+  }, [isAuthenticated, navigate, user]);
   
   const { data: sites, isLoading } = useQuery({
     queryKey: ['sites'],

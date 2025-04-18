@@ -51,9 +51,45 @@ export const siteService = {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session || !session.user) {
-      console.error("User not authenticated");
-      toast.error("You must be logged in to create a site");
-      throw new Error("User not authenticated");
+      console.error("User not authenticated - Session state:", !!session, "User state:", !!session?.user);
+      // Check if user is in local storage as a fallback
+      const storedUser = localStorage.getItem("user");
+      const storedToken = localStorage.getItem("token");
+      
+      if (!storedUser || !storedToken) {
+        toast.error("You must be logged in to create a site");
+        throw new Error("User not authenticated");
+      }
+      
+      // Use the stored user ID
+      try {
+        const user = JSON.parse(storedUser);
+        const newSite = {
+          ...siteData,
+          supervisor_id: user.id,
+          status: siteData.status || 'active' as SiteStatus
+        };
+
+        const { data, error } = await supabase
+          .from('sites')
+          .insert([newSite])
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Site creation error:", error);
+          toast.error("Failed to create site: " + error.message);
+          throw error;
+        }
+
+        console.log("Site created:", data);
+        toast.success("Site created successfully");
+        return data as unknown as Site;
+      } catch (e) {
+        console.error("Error using stored user:", e);
+        toast.error("Authentication error. Please log in again.");
+        throw new Error("User not authenticated");
+      }
     }
 
     const newSite = {
@@ -61,6 +97,8 @@ export const siteService = {
       supervisor_id: session.user.id,
       status: siteData.status || 'active' as SiteStatus
     };
+
+    console.log("Creating site with supervisor ID:", newSite.supervisor_id);
 
     const { data, error } = await supabase
       .from('sites')

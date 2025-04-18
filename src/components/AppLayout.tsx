@@ -1,10 +1,12 @@
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { AppSidebar } from './AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -12,9 +14,30 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children, requireAuth = true }: AppLayoutProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
+
+  useEffect(() => {
+    // Verify auth on component mount
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      console.log("AppLayout auth check:", {
+        hasSession: !!data.session,
+        contextAuth: isAuthenticated,
+        user: user?.email
+      });
+      
+      if (requireAuth && !data.session && !isAuthenticated) {
+        toast.error("Session expired. Please login again.");
+      }
+    };
+    
+    checkAuth();
+  }, [isAuthenticated, requireAuth, user]);
+
+  console.log("AppLayout render:", { isAuthenticated, loading, requireAuth });
 
   if (requireAuth && !loading && !isAuthenticated) {
+    console.log("Redirecting to login - not authenticated");
     return <Navigate to="/login" />;
   }
 

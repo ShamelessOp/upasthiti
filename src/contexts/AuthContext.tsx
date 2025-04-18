@@ -32,20 +32,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Set up auth state listener
   useEffect(() => {
-    // First set up the auth state listener
+    // First try to get user from local storage for immediate UI update
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Error parsing stored user:", e);
+        localStorage.removeItem("user");
+      }
+    }
+
+    // Set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log("Auth state changed:", event);
         if (session && session.user) {
           console.log("User authenticated:", session.user.email);
-          setUser(session.user as unknown as User);
-          localStorage.setItem("user", JSON.stringify(session.user));
+          const userData = session.user as unknown as User;
+          setUser(userData);
+          localStorage.setItem("user", JSON.stringify(userData));
           localStorage.setItem("token", session.access_token);
+          
+          // Make sure we're not in a loading state
+          setLoading(false);
         } else {
           console.log("User not authenticated");
           setUser(null);
           localStorage.removeItem("user");
           localStorage.removeItem("token");
+          setLoading(false);
         }
       }
     );
@@ -112,6 +128,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const isAuthenticated = !!user;
+  console.log("AuthContext state:", { isAuthenticated, user: user?.email, loading });
+
   return (
     <AuthContext.Provider
       value={{
@@ -120,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         signup,
         logout,
-        isAuthenticated: !!user,
+        isAuthenticated,
       }}
     >
       {children}

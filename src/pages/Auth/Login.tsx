@@ -1,19 +1,41 @@
 
-import React, { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // Check if user is already authenticated on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      console.log("Login page session check:", {
+        hasSession: !!data.session,
+        contextAuth: isAuthenticated
+      });
+      
+      if (data.session || isAuthenticated) {
+        console.log("User already authenticated, redirecting to sites");
+        navigate("/sites");
+      }
+    };
+    
+    if (!loading) {
+      checkSession();
+    }
+  }, [isAuthenticated, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +44,9 @@ export default function Login() {
     
     try {
       await login(email, password);
+      console.log("Login successful");
+      toast.success("Login successful");
+      navigate("/sites");
     } catch (err) {
       console.error("Login error:", err);
       setError(err instanceof Error ? err.message : "Failed to login. Please check your credentials.");
@@ -30,9 +55,10 @@ export default function Login() {
     }
   };
 
-  // If user is already authenticated, redirect to dashboard
-  if (isAuthenticated) {
-    return <Navigate to="/" />;
+  // If user is already authenticated and not in loading state, redirect to dashboard
+  if (!loading && isAuthenticated) {
+    console.log("Login component: Already authenticated, redirecting to sites");
+    return <Navigate to="/sites" />;
   }
 
   return (
