@@ -22,12 +22,9 @@ export const authService = {
       return JSON.parse(storedUser);
     }
 
-    // Then check Supabase session
-    const session = supabase.auth.getSession();
-    if (session) {
-      return session.data.session?.user as unknown as User || null;
-    }
-    
+    // Then check Supabase session - this method is synchronous
+    // We can't await here since this method is synchronous
+    // Instead we'll just return null and let the auth state listener handle updating the user
     return null;
   },
 
