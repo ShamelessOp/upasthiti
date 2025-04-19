@@ -1,71 +1,22 @@
 
-import React, { useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Building, Loader2, Plus, RefreshCw } from 'lucide-react'; // Removed FileDownload
+import { Building, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { siteService } from '@/services/siteService';
 import { Site } from '@/models/site';
 import NewSiteDialog from './components/NewSiteDialog';
-import { toast } from 'sonner';
-import { workerService } from '@/services/workerService';
 
 export default function Sites() {
   const navigate = useNavigate();
   const [showNewSiteDialog, setShowNewSiteDialog] = React.useState(false);
-  const [isGeneratingSampleData, setIsGeneratingSampleData] = React.useState(false);
-  const queryClient = useQueryClient();
   
   const { data: sites, isLoading } = useQuery({
     queryKey: ['sites'],
     queryFn: siteService.getAllSites,
   });
-
-  // Auto-generate sample data on component mount if no sites exist
-  useEffect(() => {
-    const generateSampleDataIfNeeded = async () => {
-      if (!sites || sites.length === 0) {
-        await handleGenerateSampleData();
-      }
-    };
-    
-    // Only run if we have determined sites data and we're not already loading
-    if (!isLoading && sites !== undefined) {
-      generateSampleDataIfNeeded();
-    }
-  }, [sites, isLoading]);
-
-  const handleGenerateSampleData = async () => {
-    setIsGeneratingSampleData(true);
-    try {
-      // Check if there are already sites
-      if (sites && sites.length > 0) {
-        setIsGeneratingSampleData(false);
-        return;
-      }
-
-      console.log("Generating sample data...");
-      
-      // Add sample sites
-      const newSites = await siteService.addSampleSites();
-      
-      // For each site, add workers
-      for (const site of newSites) {
-        await workerService.addSampleWorkers(site.id);
-      }
-      
-      // Refresh sites data
-      queryClient.invalidateQueries({ queryKey: ['sites'] });
-      
-      toast.success("Sample data added successfully");
-    } catch (error) {
-      console.error("Error generating sample data:", error);
-      toast.error("Failed to add sample data");
-    } finally {
-      setIsGeneratingSampleData(false);
-    }
-  };
 
   if (isLoading) {
     return (

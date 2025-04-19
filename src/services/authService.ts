@@ -1,4 +1,3 @@
-
 import { User, UserCredentials, UserRegistration, UserRole } from "@/models/user";
 import { apiRequest } from "./api";
 import { localStorageService } from "./localStorage";
@@ -153,17 +152,36 @@ export const authService = {
   },
 
   // Auto-login for development/demo purposes (new function)
-  async autoLogin(): Promise<User | null> {
-    // Check if already logged in
-    if (this.isAuthenticated()) {
-      return this.getCurrentUser();
+  async autoLogin(): Promise<any> {
+    try {
+      console.log("Auto-logging in as admin...");
+      
+      // Check if already logged in
+      const currentUser = this.getCurrentUser();
+      if (currentUser) {
+        console.log("User already logged in:", currentUser);
+        return currentUser;
+      }
+      
+      // Create a demo admin user
+      const adminUser = {
+        id: "admin-123",
+        email: "admin@upastithi.com",
+        name: "Demo Admin",
+        role: "admin",
+        created_at: new Date().toISOString()
+      };
+      
+      // Store in localStorage
+      localStorage.setItem('upastithi_user', JSON.stringify(adminUser));
+      localStorage.setItem('upastithi_authenticated', 'true');
+      
+      console.log("Auto-logged in as:", adminUser);
+      return adminUser;
+    } catch (error) {
+      console.error("Auto-login failed:", error);
+      throw error;
     }
-    
-    // Use admin credentials by default
-    return this.login({ 
-      email: "admin@upastithi.com", 
-      password: "password123" 
-    });
   },
   
   // Set session timeout (24 hours by default)
