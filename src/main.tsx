@@ -7,6 +7,7 @@ import { siteService } from './services/siteService.ts'
 import { workerService } from './services/workerService.ts'
 import { attendanceService } from './services/attendanceService.ts'
 import { localStorageService } from './services/localStorage.ts'
+import { Site } from '@/models/site.ts'
 
 // Initialize the app with sample data
 const initApp = async () => {
@@ -17,7 +18,7 @@ const initApp = async () => {
     await authService.autoLogin();
     
     // Check if we already have sample data
-    const existingSites = localStorageService.get('sites');
+    const existingSites = localStorageService.get<Site[]>('sites');
     
     // Only add sample data if none exists
     if (!existingSites || existingSites.length === 0) {
