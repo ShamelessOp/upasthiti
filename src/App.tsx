@@ -21,6 +21,7 @@ import Inventory from "@/pages/Inventory/Inventory";
 import Cashbook from "@/pages/Cashbook/Cashbook";
 import Settings from "@/pages/Settings/Settings";
 import Reports from "@/pages/Reports/Reports";
+import IoTControls from "@/pages/IoTControls/IoTControls";
 
 // Not Found Page
 import NotFound from "./pages/NotFound";
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/cashbook" element={<AppLayout><Cashbook /></AppLayout>} />
             <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
             <Route path="/reports" element={<AppLayout><Reports /></AppLayout>} />
+            <Route path="/iot-controls" element={<AppLayout><IoTControls /></AppLayout>} />
 
             {/* Redirect to home if no match */}
             <Route path="*" element={<NotFound />} />

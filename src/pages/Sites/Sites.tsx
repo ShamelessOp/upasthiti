@@ -1,22 +1,56 @@
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Building, Loader2, Plus } from 'lucide-react';
+import { Building, FileDownload, Loader2, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { siteService } from '@/services/siteService';
 import { Site } from '@/models/site';
 import NewSiteDialog from './components/NewSiteDialog';
+import { toast } from 'sonner';
+import { workerService } from '@/services/workerService';
 
 export default function Sites() {
   const navigate = useNavigate();
   const [showNewSiteDialog, setShowNewSiteDialog] = React.useState(false);
+  const [isGeneratingSampleData, setIsGeneratingSampleData] = React.useState(false);
+  const queryClient = useQueryClient();
   
   const { data: sites, isLoading } = useQuery({
     queryKey: ['sites'],
     queryFn: siteService.getAllSites,
   });
+
+  const handleGenerateSampleData = async () => {
+    setIsGeneratingSampleData(true);
+    try {
+      // Check if there are already sites
+      if (sites && sites.length > 0) {
+        toast.info("Sample data already exists");
+        setIsGeneratingSampleData(false);
+        return;
+      }
+
+      // Add sample sites
+      const newSites = await siteService.addSampleSites();
+      
+      // For each site, add workers
+      for (const site of newSites) {
+        await workerService.addSampleWorkers(site.id);
+      }
+      
+      // Refresh sites data
+      queryClient.invalidateQueries({ queryKey: ['sites'] });
+      
+      toast.success("Sample data added successfully");
+    } catch (error) {
+      console.error("Error generating sample data:", error);
+      toast.error("Failed to add sample data");
+    } finally {
+      setIsGeneratingSampleData(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -33,10 +67,20 @@ export default function Sites() {
           <h2 className="text-3xl font-bold tracking-tight">Sites</h2>
           <p className="text-muted-foreground">Manage your construction sites</p>
         </div>
-        <Button onClick={() => setShowNewSiteDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add New Site
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={handleGenerateSampleData}
+            disabled={isGeneratingSampleData || (sites && sites.length > 0)}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isGeneratingSampleData ? 'animate-spin' : ''}`} />
+            Generate Sample Data
+          </Button>
+          <Button onClick={() => setShowNewSiteDialog(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add New Site
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

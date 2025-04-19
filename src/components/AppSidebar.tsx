@@ -27,6 +27,7 @@ import {
   Settings,
   User,
   Users,
+  Droplet,
 } from "lucide-react";
 
 export function AppSidebar() {
@@ -80,6 +81,14 @@ export function AppSidebar() {
                 <Link to="/inventory">
                   <Package className="h-4 w-4" />
                   <span>Inventory</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/iot-controls")}>
+                <Link to="/iot-controls">
+                  <Droplet className="h-4 w-4" />
+                  <span>IoT Controls</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

@@ -99,5 +99,80 @@ export const siteService = {
 
     toast.success("Site deleted successfully");
     return true;
+  },
+
+  // Add sample sites
+  async addSampleSites(): Promise<Site[]> {
+    const user = (await supabase.auth.getUser()).data.user;
+    
+    if (!user) {
+      toast.error("User not authenticated");
+      throw new Error("User not authenticated");
+    }
+
+    const sampleSites = [
+      {
+        name: "Sapphire Heights",
+        location: "Powai, Mumbai",
+        description: "Luxury apartment complex with 4 towers",
+        status: "active" as SiteStatus,
+        start_date: "2025-01-10",
+        end_date: "2025-12-15",
+        supervisor_id: user.id
+      },
+      {
+        name: "Green Valley Villas",
+        location: "Whitefield, Bangalore",
+        description: "Eco-friendly gated community with 25 villas",
+        status: "active" as SiteStatus,
+        start_date: "2025-02-05",
+        end_date: "2025-09-30",
+        supervisor_id: user.id
+      },
+      {
+        name: "Metro Business Park",
+        location: "Gurgaon, Delhi NCR",
+        description: "Commercial office complex with 3 buildings",
+        status: "active" as SiteStatus,
+        start_date: "2025-03-20",
+        supervisor_id: user.id
+      },
+      {
+        name: "Heritage Restoration",
+        location: "Fort Area, Jaipur",
+        description: "Historical building restoration project",
+        status: "paused" as SiteStatus,
+        start_date: "2024-12-01",
+        end_date: "2025-08-15",
+        supervisor_id: user.id
+      },
+      {
+        name: "River Front Development",
+        location: "Sabarmati, Ahmedabad",
+        description: "Public infrastructure project along the riverbank",
+        status: "active" as SiteStatus,
+        start_date: "2025-01-15",
+        end_date: "2026-02-28",
+        supervisor_id: user.id
+      }
+    ];
+
+    try {
+      const { data, error } = await supabase
+        .from('sites')
+        .insert(sampleSites)
+        .select();
+
+      if (error) {
+        toast.error("Failed to add sample sites: " + error.message);
+        throw error;
+      }
+
+      toast.success("Sample sites added successfully");
+      return data as unknown as Site[];
+    } catch (error) {
+      console.error("Error adding sample sites:", error);
+      throw error;
+    }
   }
 };
