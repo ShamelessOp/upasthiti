@@ -1,4 +1,3 @@
-
 import { Site, SiteStatus, CreateSiteInput, UpdateSiteInput } from "@/models/site";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";

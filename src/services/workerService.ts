@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Worker, WorkerFilter } from "@/models/worker";
 import { toast } from "sonner";
