@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Building, Loader2, Plus, RefreshCw } from 'lucide-react'; // Removed FileDownload
@@ -22,16 +22,31 @@ export default function Sites() {
     queryFn: siteService.getAllSites,
   });
 
+  // Auto-generate sample data on component mount if no sites exist
+  useEffect(() => {
+    const generateSampleDataIfNeeded = async () => {
+      if (!sites || sites.length === 0) {
+        await handleGenerateSampleData();
+      }
+    };
+    
+    // Only run if we have determined sites data and we're not already loading
+    if (!isLoading && sites !== undefined) {
+      generateSampleDataIfNeeded();
+    }
+  }, [sites, isLoading]);
+
   const handleGenerateSampleData = async () => {
     setIsGeneratingSampleData(true);
     try {
       // Check if there are already sites
       if (sites && sites.length > 0) {
-        toast.info("Sample data already exists");
         setIsGeneratingSampleData(false);
         return;
       }
 
+      console.log("Generating sample data...");
+      
       // Add sample sites
       const newSites = await siteService.addSampleSites();
       
@@ -68,14 +83,6 @@ export default function Sites() {
           <p className="text-muted-foreground">Manage your construction sites</p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={handleGenerateSampleData}
-            disabled={isGeneratingSampleData || (sites && sites.length > 0)}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isGeneratingSampleData ? 'animate-spin' : ''}`} />
-            Generate Sample Data
-          </Button>
           <Button onClick={() => setShowNewSiteDialog(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Add New Site

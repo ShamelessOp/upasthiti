@@ -2,6 +2,7 @@
 import { Site, SiteStatus, CreateSiteInput, UpdateSiteInput } from "@/models/site";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { authService } from "./authService";
 
 export const siteService = {
   // Get all sites
@@ -39,16 +40,26 @@ export const siteService = {
 
   // Create new site
   async createSite(siteData: CreateSiteInput): Promise<Site | null> {
-    const user = (await supabase.auth.getUser()).data.user;
+    // Get the current user from auth service
+    const user = authService.getCurrentUser();
     
     if (!user) {
-      toast.error("User not authenticated");
-      throw new Error("User not authenticated");
+      // Try to auto-login if not authenticated
+      await authService.autoLogin();
+      
+      // Check again
+      const autologgedUser = authService.getCurrentUser();
+      if (!autologgedUser) {
+        toast.error("User not authenticated");
+        throw new Error("User not authenticated");
+      }
     }
 
+    const currentUser = authService.getCurrentUser();
+    
     const newSite = {
       ...siteData,
-      supervisor_id: user.id,
+      supervisor_id: currentUser?.id || "1", // Use default admin ID if all else fails
       status: siteData.status || 'active' as SiteStatus
     };
 

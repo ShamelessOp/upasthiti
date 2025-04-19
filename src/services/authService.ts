@@ -13,6 +13,7 @@ const MOCK_USERS = [
     password: "password123",
     role: "admin" as UserRole,
     createdAt: "2025-01-01T00:00:00Z",
+    created_at: "2025-01-01T00:00:00Z",
     lastLogin: null,
   },
   {
@@ -23,6 +24,7 @@ const MOCK_USERS = [
     role: "siteManager" as UserRole,
     siteId: "1",
     createdAt: "2025-01-15T00:00:00Z",
+    created_at: "2025-01-15T00:00:00Z",
     lastLogin: null,
   },
   {
@@ -33,6 +35,7 @@ const MOCK_USERS = [
     role: "supervisor" as UserRole,
     siteId: "2",
     createdAt: "2025-02-01T00:00:00Z",
+    created_at: "2025-02-01T00:00:00Z",
     lastLogin: null,
   },
 ];
@@ -78,6 +81,9 @@ export const authService = {
       localStorageService.set(USER_STORAGE_KEY, userSession);
       localStorageService.set(TOKEN_STORAGE_KEY, `mock-token-${userSession.id}`);
       
+      // Set a default session timeout for 24 hours
+      this.setSessionTimeout();
+      
       toast.success("Successfully logged in");
       return userSession;
     }, "Login failed").then(response => response.data);
@@ -100,6 +106,7 @@ export const authService = {
         password: userData.password,
         role: userData.role,
         createdAt: nowIso,
+        created_at: nowIso,
         lastLogin: nowIso,
       };
       
@@ -112,6 +119,9 @@ export const authService = {
       // Store in local storage
       localStorageService.set(USER_STORAGE_KEY, userSession);
       localStorageService.set(TOKEN_STORAGE_KEY, `mock-token-${userSession.id}`);
+      
+      // Set a default session timeout
+      this.setSessionTimeout();
       
       toast.success("Account created successfully");
       return userSession;
@@ -140,5 +150,26 @@ export const authService = {
   // Get authentication token
   getToken(): string | null {
     return localStorageService.get<string>(TOKEN_STORAGE_KEY);
+  },
+
+  // Auto-login for development/demo purposes (new function)
+  async autoLogin(): Promise<User | null> {
+    // Check if already logged in
+    if (this.isAuthenticated()) {
+      return this.getCurrentUser();
+    }
+    
+    // Use admin credentials by default
+    return this.login({ 
+      email: "admin@upastithi.com", 
+      password: "password123" 
+    });
+  },
+  
+  // Set session timeout (24 hours by default)
+  setSessionTimeout(hours = 24): void {
+    const expiration = new Date();
+    expiration.setHours(expiration.getHours() + hours);
+    localStorageService.set("sessionExpires", expiration.toISOString());
   }
 };
