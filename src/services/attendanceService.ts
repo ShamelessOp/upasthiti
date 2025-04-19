@@ -1,3 +1,4 @@
+
 import { AttendanceFilter, AttendanceRecord, AttendanceSummary, AttendanceStatus } from "@/models/attendance";
 import { apiRequest } from "./api";
 import { localStorageService } from "./localStorage";
@@ -113,7 +114,7 @@ export const attendanceService = {
       } else {
         // Create new record
         newRecord = {
-          id: `${Date.now()}`,
+          id: `attendance-${Date.now()}`,
           workerId: data.workerId || "",
           workerName: data.workerName || "",
           siteId: data.siteId || "",
@@ -122,7 +123,7 @@ export const attendanceService = {
           checkInTime: data.checkInTime || timeString,
           checkOutTime: data.checkOutTime || "",
           status: "Present" as AttendanceStatus,
-          overtimeHours: 0,
+          overtimeHours: data.overtimeHours || 0,
           createdBy: user.id,
           updatedBy: user.id,
           createdAt: nowIso,

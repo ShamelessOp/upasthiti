@@ -1,13 +1,13 @@
 
-import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
-import { authService } from './services/authService.ts'
-import { siteService } from './services/siteService.ts'
-import { workerService } from './services/workerService.ts'
-import { attendanceService } from './services/attendanceService.ts'
-import { localStorageService } from './services/localStorage.ts'
-import { Site } from '@/models/site.ts'
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
+import './index.css';
+import { authService } from './services/authService.ts';
+import { siteService } from './services/siteService.ts';
+import { workerService } from './services/workerService.ts';
+import { attendanceService } from './services/attendanceService.ts';
+import { localStorageService } from './services/localStorage.ts';
+import { Site } from '@/models/site.ts';
 
 // Initialize the app with sample data
 const initApp = async () => {
@@ -20,9 +20,9 @@ const initApp = async () => {
     // Check if we already have sample data
     const existingSites = localStorageService.get<Site[]>('sites');
     
-    // Only add sample data if none exists
+    // Always create sample sites if none exist
     if (!existingSites || existingSites.length === 0) {
-      console.log("No existing data found. Adding sample data...");
+      console.log("No existing sites found. Adding sample data...");
       
       // Add sample sites
       const sites = await siteService.addSampleSites();
@@ -65,6 +65,8 @@ const initApp = async () => {
           console.log(`Generated attendance for ${dateString}`);
         }
       }
+    } else {
+      console.log(`Found ${existingSites.length} existing sites`);
     }
     
     // Render the app
