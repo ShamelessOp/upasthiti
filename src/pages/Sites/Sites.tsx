@@ -2,7 +2,7 @@
 import React from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Building, FileDownload, Loader2, Plus, RefreshCw } from 'lucide-react';
+import { Building, Loader2, Plus, RefreshCw } from 'lucide-react'; // Removed FileDownload
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { siteService } from '@/services/siteService';
