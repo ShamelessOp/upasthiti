@@ -4,128 +4,186 @@ import { Button } from "@/components/ui/button";
 import { UserPlus, Briefcase, DollarSign, Phone } from "lucide-react";
 import { workerService } from "@/services/workerService";
 import { toast } from "sonner";
+import { z } from 'zod';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface AddWorkerDialogProps {
   siteId: string;
   onWorkerAdded?: () => void;
 }
 
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  role: z.string().optional(),
+  wage: z.string().optional(),
+  wageType: z.string().default("Day"),
+  phone: z.string().optional()
+});
+
 export function AddWorkerDialog({ siteId, onWorkerAdded }: AddWorkerDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [role, setRole] = useState("");
-  const [wage, setWage] = useState("");
-  const [wageType, setWageType] = useState("Day");
-  const [phone, setPhone] = useState("");
+  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+  
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      role: "",
+      wage: "",
+      wageType: "Day",
+      phone: ""
+    }
+  });
 
   const generateWorkerId = () => {
     return `WKR${Math.floor(Math.random() * 100000)}`;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name) {
-      toast.error("Name is required");
-      return;
-    }
-    try {
-      await workerService.createWorker({
+  const { mutate: createWorker, isPending } = useMutation({
+    mutationFn: (data: any) => {
+      return workerService.createWorker({
         worker_id: generateWorkerId(),
-        name,
-        contact_number: phone || "",
+        name: data.name,
+        contact_number: data.phone || "",
         address: "",
-        skills: [role].filter(Boolean),
-        daily_wage: wageType === "Day" ? Number(wage) : 0,
+        skills: [data.role].filter(Boolean),
+        daily_wage: data.wageType === "Day" ? Number(data.wage) || 0 : 0,
         joining_date: new Date().toISOString().split("T")[0],
         site_id: siteId,
         status: "active"
       });
+    },
+    onSuccess: () => {
       toast.success("Worker added successfully");
-      setIsOpen(false);
+      setOpen(false);
+      form.reset();
+      queryClient.invalidateQueries({ queryKey: ['workers'] });
       onWorkerAdded?.();
-      setName("");
-      setRole("");
-      setWage("");
-      setWageType("Day");
-      setPhone("");
-    } catch (error) {
+    },
+    onError: () => {
       toast.error("Failed to add worker");
     }
+  });
+
+  const onSubmit = (data: any) => {
+    createWorker(data);
   };
 
   return (
     <>
-      <Button onClick={() => setIsOpen(true)}>
+      <Button onClick={() => setOpen(true)}>
         <UserPlus className="mr-2 h-4 w-4" />
         Add Worker
       </Button>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white p-6 rounded max-w-sm w-full shadow-lg space-y-3">
-            <h3 className="text-lg font-bold mb-2">Add Worker</h3>
-            <form className="space-y-3" onSubmit={handleSubmit}>
-              <div>
-                <label className="block text-xs font-semibold mb-1">Name*</label>
-                <input
-                  required
-                  className="w-full border p-2 rounded"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="Worker name"
+      
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Worker</DialogTitle>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name*</FormLabel>
+                    <FormControl>
+                      <Input required placeholder="Worker name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center">
+                      <Briefcase className="inline mr-1" /> Work Role
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Mason, Electrician" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="wage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center">
+                        <DollarSign className="inline mr-1" /> Wage
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="e.g. 800" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="wageType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Day">Per Day</SelectItem>
+                          <SelectItem value="Hour">Per Hour</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
                 />
               </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 flex items-center">
-                  <Briefcase className="inline mr-1" /> Work Role
-                </label>
-                <input
-                  className="w-full border p-2 rounded"
-                  value={role}
-                  onChange={e => setRole(e.target.value)}
-                  placeholder="e.g. Mason, Electrician"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 flex items-center">
-                  <DollarSign className="inline mr-1" /> Wage
-                </label>
-                <div className="flex gap-1">
-                  <input
-                    type="number"
-                    className="w-1/2 border p-2 rounded"
-                    value={wage}
-                    onChange={e => setWage(e.target.value)}
-                    placeholder="e.g. 800"
-                  />
-                  <select className="w-1/2 border p-2 rounded" value={wageType} onChange={e => setWageType(e.target.value)}>
-                    <option value="Day">Per Day</option>
-                    <option value="Hour">Per Hour</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 flex items-center">
-                  <Phone className="inline mr-1" /> Phone
-                </label>
-                <input
-                  className="w-full border p-2 rounded"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  placeholder="Phone number"
-                />
-              </div>
-              <div className="flex justify-end gap-2 mt-2">
-                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+              
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center">
+                      <Phone className="inline mr-1" /> Phone
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="Phone number" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              <div className="flex justify-end gap-2 mt-4">
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">
-                  Add
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? "Adding..." : "Add Worker"}
                 </Button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </Form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

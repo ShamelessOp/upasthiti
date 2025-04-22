@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { User, UserRole } from "@/models/user";
 import { userManagementService } from "@/services/userManagementService";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Loader2, Plus, Users as UsersIcon } from "lucide-react";
+import { Loader2, Plus, RefreshCcw, Users as UsersIcon } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 
 interface UserWithEmail {
@@ -26,6 +26,7 @@ interface UserWithEmail {
 export default function Users() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [newUser, setNewUser] = useState({
     email: '',
@@ -34,9 +35,25 @@ export default function Users() {
     role: 'siteManager' as UserRole,
   });
 
-  const { data: users, isLoading, refetch } = useQuery({
+  const { data: users, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['users'],
     queryFn: userManagementService.getAllUsers,
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: userManagementService.createUser,
+    onSuccess: () => {
+      toast.success("User created successfully");
+      setNewUser({ email: '', password: '', name: '', role: 'siteManager' });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (error) => {
+      console.error("Error creating user:", error);
+      toast.error("Failed to create user");
+    },
+    onSettled: () => {
+      setIsCreating(false);
+    }
   });
 
   // Check if current user has permission
@@ -49,28 +66,18 @@ export default function Users() {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsCreating(true);
-    try {
-      await userManagementService.createUser(newUser);
-      setNewUser({ email: '', password: '', name: '', role: 'siteManager' });
-      // Force refetch to update the user list
-      refetch();
-      toast.success("User created successfully");
-    } catch (error) {
-      console.error("Error creating user:", error);
-      toast.error("Failed to create user");
-    } finally {
-      setIsCreating(false);
+    if (!newUser.email || !newUser.password || !newUser.name) {
+      toast.error("Please fill in all required fields");
+      return;
     }
+    
+    setIsCreating(true);
+    createUserMutation.mutate(newUser);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-[200px] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
+  const handleRefresh = () => {
+    refetch();
+  };
 
   return (
     <div className="space-y-6">
@@ -79,6 +86,10 @@ export default function Users() {
           <h2 className="text-3xl font-bold tracking-tight">Users</h2>
           <p className="text-muted-foreground">Manage system users and their roles</p>
         </div>
+        <Button onClick={handleRefresh} variant="outline" disabled={isRefetching}>
+          <RefreshCcw className={`mr-2 h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       <Card>
@@ -88,9 +99,9 @@ export default function Users() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleCreateUser} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">Name*</Label>
                 <Input
                   id="name"
                   value={newUser.name}
@@ -99,7 +110,7 @@ export default function Users() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email*</Label>
                 <Input
                   id="email"
                   type="email"
@@ -109,7 +120,7 @@ export default function Users() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Password*</Label>
                 <Input
                   id="password"
                   type="password"
@@ -119,18 +130,19 @@ export default function Users() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
+                <Label htmlFor="role">Role*</Label>
                 <Select
                   value={newUser.role}
                   onValueChange={(value: UserRole) => setNewUser(prev => ({ ...prev, role: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="role">
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
                       <SelectItem value="siteManager">Site Manager</SelectItem>
                       <SelectItem value="supervisor">Supervisor</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
@@ -151,7 +163,7 @@ export default function Users() {
             <UsersIcon className="h-5 w-5" />
             User List
           </CardTitle>
-          <CardDescription>All users in the system</CardDescription>
+          <CardDescription>All users in the system ({users?.length || 0} users)</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -164,19 +176,31 @@ export default function Users() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users && users.length > 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-4">
+                    <div className="flex justify-center">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : users && users.length > 0 ? (
                 users.map((user: UserWithEmail) => (
                   <TableRow key={user.id}>
-                    <TableCell>{user.name}</TableCell>
+                    <TableCell>{user.name || "N/A"}</TableCell>
                     <TableCell>{user.email || "N/A"}</TableCell>
-                    <TableCell className="capitalize">{user.role}</TableCell>
-                    <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="capitalize">{user.role || "N/A"}</TableCell>
+                    <TableCell>
+                      {user.created_at 
+                        ? new Date(user.created_at).toLocaleDateString() 
+                        : "N/A"}
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center py-4">
-                    No users found
+                    No users found. Create a user to get started.
                   </TableCell>
                 </TableRow>
               )}

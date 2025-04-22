@@ -11,15 +11,27 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
 import { siteService } from '@/services/siteService';
 import { CreateSiteInput } from '@/models/site';
+import { toast } from 'sonner';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 interface NewSiteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+const siteSchema = z.object({
+  name: z.string().min(1, 'Site name is required'),
+  location: z.string().min(1, 'Location is required'),
+  description: z.string().optional(),
+  status: z.string(),
+  start_date: z.string()
+});
+
 export default function NewSiteDialog({ open, onOpenChange }: NewSiteDialogProps) {
   const queryClient = useQueryClient();
   const form = useForm<CreateSiteInput>({
+    resolver: zodResolver(siteSchema),
     defaultValues: {
       name: '',
       location: '',
@@ -35,11 +47,21 @@ export default function NewSiteDialog({ open, onOpenChange }: NewSiteDialogProps
       queryClient.invalidateQueries({ queryKey: ['sites'] });
       onOpenChange(false);
       form.reset();
+      toast.success('Site created successfully');
     },
+    onError: (error) => {
+      console.error('Error creating site:', error);
+      toast.error('Failed to create site. Please try again.');
+    }
   });
 
   const onSubmit = (data: CreateSiteInput) => {
-    createSite(data);
+    try {
+      createSite(data);
+    } catch (error) {
+      console.error('Form submission error:', error);
+      toast.error('Failed to process form. Please check your inputs and try again.');
+    }
   };
 
   return (

@@ -7,7 +7,8 @@ import { filterWorkers } from "./workerFilter";
 export const workerService = {
   ...workerCrud,
   // Add any other worker-related functions here
-  filterWorkers
+  filterWorkers,
+  addSampleWorkers
 };
 
 // Also export these individually
