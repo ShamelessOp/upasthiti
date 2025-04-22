@@ -5,6 +5,7 @@ import './index.css';
 import { authService } from './services/authService.ts';
 import { siteService } from './services/siteService.ts';
 import { workerService } from './services/workerService.ts';
+import { addSampleWorkers } from './services/workerSample.ts';
 import { attendanceService } from './services/attendanceService.ts';
 import { localStorageService } from './services/localStorage.ts';
 import { Site } from '@/models/site.ts';
@@ -34,7 +35,7 @@ const initApp = async () => {
         
         // For each site, add workers
         for (const site of sites) {
-          const workers = await workerService.addSampleWorkers(site.id);
+          const workers = await addSampleWorkers(site.id);
           console.log(`Added ${workers.length} sample workers for site ${site.name}`);
           
           // Generate 3 days of attendance records for all workers
