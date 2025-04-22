@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface AddWorkerDialogProps {
+  
   siteId: string;
   onWorkerAdded?: () => void;
 }
