@@ -83,6 +83,16 @@ export const authService = {
       // Set a default session timeout for 24 hours
       this.setSessionTimeout();
       
+      // Check if this user has initialized data before
+      const hasInitialized = localStorageService.get<boolean>(`data_initialized_${userSession.id}`);
+      
+      // If this is a first-time login for this user, prepare their environment
+      if (!hasInitialized) {
+        console.log("First login for user:", userSession.id);
+        // This flag will be used to show the welcome tour
+        // The actual data initialization happens in AppLayout
+      }
+      
       toast.success("Successfully logged in");
       return userSession;
     }, "Login failed").then(response => response.data);
@@ -98,8 +108,9 @@ export const authService = {
       
       // Create new user
       const nowIso = new Date().toISOString();
+      const userId = `user-${Date.now()}`;
       const newUser = {
-        id: `${MOCK_USERS.length + 1}`,
+        id: userId,
         name: userData.name,
         email: userData.email,
         password: userData.password,

@@ -1,10 +1,12 @@
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { AppSidebar } from './AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
+import { WelcomeTour } from './WelcomeTour';
+import { localStorageService } from '@/services/localStorage';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -12,7 +14,30 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children, requireAuth = true }: AppLayoutProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
+  const isNewUser = user && !localStorageService.get<boolean>(`tour_shown_${user.id}`);
+
+  useEffect(() => {
+    // For new users, we want to ensure they have a clean start
+    if (isNewUser) {
+      console.log("New user detected, preparing clean environment");
+      
+      // We don't clear everything as that would log them out
+      // Instead we ensure they don't have sample data by checking a flag
+      
+      const hasInitializedOwnData = localStorageService.get<boolean>(`data_initialized_${user.id}`);
+      
+      if (!hasInitializedOwnData) {
+        // Clear site-related data only for this new user
+        const allSites = localStorageService.get('sites') || [];
+        const otherUsersSites = allSites.filter(site => site.supervisor_id !== user.id);
+        localStorageService.set('sites', otherUsersSites);
+        
+        // Mark as initialized for this user
+        localStorageService.set(`data_initialized_${user.id}`, true);
+      }
+    }
+  }, [isNewUser, user]);
 
   if (requireAuth && !loading && !isAuthenticated) {
     return <Navigate to="/login" />;
@@ -42,6 +67,7 @@ export function AppLayout({ children, requireAuth = true }: AppLayoutProps) {
             {children}
           </div>
         </main>
+        {isNewUser && <WelcomeTour />}
       </div>
     </SidebarProvider>
   );

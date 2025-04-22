@@ -12,61 +12,68 @@ import { Site } from '@/models/site.ts';
 // Initialize the app with sample data
 const initApp = async () => {
   try {
-    console.log("Initializing app with sample data...");
+    console.log("Initializing app...");
     
     // Auto-login for demo purposes
-    await authService.autoLogin();
+    const currentUser = await authService.autoLogin();
     
-    // Check if we already have sample data
-    const existingSites = localStorageService.get<Site[]>('sites');
-    
-    // Always create sample sites if none exist
-    if (!existingSites || existingSites.length === 0) {
-      console.log("No existing sites found. Adding sample data...");
+    // Only add sample data for admin/demo users
+    if (currentUser && currentUser.email === "admin@upastithi.com") {
+      console.log("Admin user detected, checking for sample data...");
       
-      // Add sample sites
-      const sites = await siteService.addSampleSites();
-      console.log("Added sample sites:", sites);
+      // Check if we already have sample data
+      const existingSites = localStorageService.get<Site[]>('sites');
       
-      // For each site, add workers
-      for (const site of sites) {
-        const workers = await workerService.addSampleWorkers(site.id);
-        console.log(`Added ${workers.length} sample workers for site ${site.name}`);
+      // Add sample sites if none exist for demo admin
+      if (!existingSites || existingSites.length === 0) {
+        console.log("No existing sites found. Adding sample data for admin...");
         
-        // Generate 3 days of attendance records for all workers
-        const today = new Date();
-        for (let i = 0; i < 3; i++) {
-          const date = new Date(today);
-          date.setDate(date.getDate() - i);
-          const dateString = date.toISOString().split('T')[0];
+        // Add sample sites
+        const sites = await siteService.addSampleSites();
+        console.log("Added sample sites:", sites);
+        
+        // For each site, add workers
+        for (const site of sites) {
+          const workers = await workerService.addSampleWorkers(site.id);
+          console.log(`Added ${workers.length} sample workers for site ${site.name}`);
           
-          for (const worker of workers) {
-            // Create attendance record with random status
-            const status = Math.random() > 0.1 ? "Present" : "Absent";
-            const checkInTime = status === "Present" ? 
-              `0${Math.floor(Math.random() * 2) + 8}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}` : 
-              "";
-            const checkOutTime = status === "Present" ? 
-              `${Math.floor(Math.random() * 2) + 17}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}` : 
-              "";
+          // Generate 3 days of attendance records for all workers
+          const today = new Date();
+          for (let i = 0; i < 3; i++) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            const dateString = date.toISOString().split('T')[0];
             
-            await attendanceService.markAttendance({
-              workerId: worker.id,
-              workerName: worker.name,
-              siteId: site.id,
-              siteName: site.name,
-              date: dateString,
-              checkInTime: checkInTime,
-              checkOutTime: checkOutTime,
-              status: status,
-              overtimeHours: status === "Present" ? Math.floor(Math.random() * 3) : 0
-            });
+            for (const worker of workers) {
+              // Create attendance record with random status
+              const status = Math.random() > 0.1 ? "Present" : "Absent";
+              const checkInTime = status === "Present" ? 
+                `0${Math.floor(Math.random() * 2) + 8}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}` : 
+                "";
+              const checkOutTime = status === "Present" ? 
+                `${Math.floor(Math.random() * 2) + 17}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}` : 
+                "";
+              
+              await attendanceService.markAttendance({
+                workerId: worker.id,
+                workerName: worker.name,
+                siteId: site.id,
+                siteName: site.name,
+                date: dateString,
+                checkInTime: checkInTime,
+                checkOutTime: checkOutTime,
+                status: status,
+                overtimeHours: status === "Present" ? Math.floor(Math.random() * 3) : 0
+              });
+            }
+            console.log(`Generated attendance for ${dateString}`);
           }
-          console.log(`Generated attendance for ${dateString}`);
         }
+      } else {
+        console.log(`Found ${existingSites.length} existing sites`);
       }
-    } else {
-      console.log(`Found ${existingSites.length} existing sites`);
+    } else if (currentUser) {
+      console.log(`Regular user detected: ${currentUser.name}. No sample data will be added.`);
     }
     
     // Render the app

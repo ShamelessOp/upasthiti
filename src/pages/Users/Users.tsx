@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Loader2, Plus, Users as UsersIcon } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
+
+interface UserWithEmail {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  created_at: string;
+  site_id?: string | null;
+}
 
 export default function Users() {
   const { user } = useAuth();
@@ -31,7 +40,7 @@ export default function Users() {
   });
 
   // Check if current user has permission
-  React.useEffect(() => {
+  useEffect(() => {
     if (user?.role !== 'supervisor' && user?.role !== 'admin') {
       toast.error("You don't have permission to access this page");
       navigate('/');
@@ -44,7 +53,12 @@ export default function Users() {
     try {
       await userManagementService.createUser(newUser);
       setNewUser({ email: '', password: '', name: '', role: 'siteManager' });
+      // Force refetch to update the user list
       refetch();
+      toast.success("User created successfully");
+    } catch (error) {
+      console.error("Error creating user:", error);
+      toast.error("Failed to create user");
     } finally {
       setIsCreating(false);
     }
@@ -144,18 +158,28 @@ export default function Users() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Created At</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users?.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.name}</TableCell>
-                  <TableCell className="capitalize">{user.role}</TableCell>
-                  <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+              {users && users.length > 0 ? (
+                users.map((user: UserWithEmail) => (
+                  <TableRow key={user.id}>
+                    <TableCell>{user.name}</TableCell>
+                    <TableCell>{user.email || "N/A"}</TableCell>
+                    <TableCell className="capitalize">{user.role}</TableCell>
+                    <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-4">
+                    No users found
+                  </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

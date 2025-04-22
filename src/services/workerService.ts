@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { Worker, WorkerFilter } from "@/models/worker";
+import { Worker, WorkerFilter, WorkerStatus } from "@/models/worker";
 import { toast } from "sonner";
 import { localStorageService } from "./localStorage";
 
@@ -239,7 +238,7 @@ export const workerService = {
     // Generate unique IDs for the workers
     const generateId = () => `worker-${Math.floor(Math.random() * 10000)}`;
     
-    const sampleWorkers = [
+    const sampleWorkers: Worker[] = [
       {
         id: generateId(),
         worker_id: "W001",
@@ -250,7 +249,7 @@ export const workerService = {
         daily_wage: 800,
         joining_date: "2025-01-15",
         site_id: siteId,
-        status: "active",
+        status: "active" as WorkerStatus,
         created_at: now,
         updated_at: now
       },
@@ -264,7 +263,7 @@ export const workerService = {
         daily_wage: 850,
         joining_date: "2025-02-01",
         site_id: siteId,
-        status: "active",
+        status: "active" as WorkerStatus,
         created_at: now,
         updated_at: now
       },
@@ -278,7 +277,7 @@ export const workerService = {
         daily_wage: 750,
         joining_date: "2025-01-20",
         site_id: siteId,
-        status: "active",
+        status: "active" as WorkerStatus,
         created_at: now,
         updated_at: now
       },
@@ -292,7 +291,7 @@ export const workerService = {
         daily_wage: 820,
         joining_date: "2025-02-10",
         site_id: siteId,
-        status: "active",
+        status: "active" as WorkerStatus,
         created_at: now,
         updated_at: now
       },
@@ -306,7 +305,7 @@ export const workerService = {
         daily_wage: 900,
         joining_date: "2024-12-15",
         site_id: siteId,
-        status: "active",
+        status: "active" as WorkerStatus,
         created_at: now,
         updated_at: now
       }
@@ -328,12 +327,17 @@ export const workerService = {
         localStorageService.set(WORKERS_STORAGE_KEY, allWorkers);
         
         // Try to store in Supabase too
-        const { error } = await supabase
-          .from('workers')
-          .insert(newWorkers);
+        try {
+          const { error } = await supabase
+            .from('workers')
+            .insert(newWorkers);
 
-        if (error) {
-          console.error("Error saving workers to Supabase, but local storage was updated:", error);
+          if (error) {
+            console.error("Error saving workers to Supabase, but local storage was updated:", error);
+          }
+        } catch (supabaseError) {
+          console.error("Supabase error:", supabaseError);
+          // Continue since we've already stored locally
         }
         
         console.log(`Added ${newWorkers.length} sample workers for site ${siteId}`);
