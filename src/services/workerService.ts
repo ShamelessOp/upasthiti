@@ -249,7 +249,7 @@ export const workerService = {
         daily_wage: 800,
         joining_date: "2025-01-15",
         site_id: siteId,
-        status: "active" as WorkerStatus,
+        status: "active",
         created_at: now,
         updated_at: now
       },
@@ -263,7 +263,7 @@ export const workerService = {
         daily_wage: 850,
         joining_date: "2025-02-01",
         site_id: siteId,
-        status: "active" as WorkerStatus,
+        status: "active",
         created_at: now,
         updated_at: now
       },
@@ -277,7 +277,7 @@ export const workerService = {
         daily_wage: 750,
         joining_date: "2025-01-20",
         site_id: siteId,
-        status: "active" as WorkerStatus,
+        status: "active",
         created_at: now,
         updated_at: now
       },
@@ -291,7 +291,7 @@ export const workerService = {
         daily_wage: 820,
         joining_date: "2025-02-10",
         site_id: siteId,
-        status: "active" as WorkerStatus,
+        status: "active",
         created_at: now,
         updated_at: now
       },
@@ -305,7 +305,7 @@ export const workerService = {
         daily_wage: 900,
         joining_date: "2024-12-15",
         site_id: siteId,
-        status: "active" as WorkerStatus,
+        status: "active",
         created_at: now,
         updated_at: now
       }

@@ -7,6 +7,7 @@ import { Navigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { WelcomeTour } from './WelcomeTour';
 import { localStorageService } from '@/services/localStorage';
+import { Site } from '@/models/site';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -29,7 +30,7 @@ export function AppLayout({ children, requireAuth = true }: AppLayoutProps) {
       
       if (!hasInitializedOwnData) {
         // Clear site-related data only for this new user
-        const allSites = localStorageService.get('sites') || [];
+        const allSites = localStorageService.get<Site[]>('sites') || [];
         const otherUsersSites = allSites.filter(site => site.supervisor_id !== user.id);
         localStorageService.set('sites', otherUsersSites);
         

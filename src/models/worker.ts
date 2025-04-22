@@ -23,3 +23,5 @@ export interface WorkerFilter {
   skill?: string;
 }
 
+// Add the WorkerStatus type that's missing
+export type WorkerStatus = "active" | "inactive";
