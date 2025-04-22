@@ -14,7 +14,128 @@ import { Site } from "@/models/site";
 import { Worker } from "@/models/worker";
 import { toast } from "sonner";
 import { NewWorkerDialog } from "./components/NewWorkerDialog";
+import { AddWorkerDialog } from "./components/AddWorkerDialog";
 import * as XLSX from 'xlsx';
+
+function AddWorkerDialog({ siteId, onWorkerAdded }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
+  const [wage, setWage] = useState("");
+  const [wageType, setWageType] = useState("Day");
+  const [phone, setPhone] = useState("");
+
+  const generateWorkerId = () => {
+    return `WKR${Math.floor(Math.random() * 100000)}`;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!name) {
+      toast.error("Name is required");
+      return;
+    }
+    try {
+      await workerService.createWorker({
+        worker_id: generateWorkerId(),
+        name,
+        contact_number: phone || "",
+        address: "",
+        skills: [role].filter(Boolean),
+        daily_wage: wageType === "Day" ? Number(wage) : 0,
+        joining_date: new Date().toISOString().split("T")[0],
+        site_id: siteId,
+        status: "active"
+      });
+      toast.success("Worker added successfully");
+      setIsOpen(false);
+      onWorkerAdded?.();
+      setName("");
+      setRole("");
+      setWage("");
+      setWageType("Day");
+      setPhone("");
+    } catch (error) {
+      toast.error("Failed to add worker");
+    }
+  };
+
+  return (
+    <>
+      <Button onClick={() => setIsOpen(true)}>
+        <UserPlus className="mr-2 h-4 w-4" />
+        Add Worker
+      </Button>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white p-6 rounded max-w-sm w-full shadow-lg space-y-3">
+            <h3 className="text-lg font-bold mb-2">Add Worker</h3>
+            <form className="space-y-3" onSubmit={handleSubmit}>
+              <div>
+                <label className="block text-xs font-semibold mb-1">Name*</label>
+                <input
+                  required
+                  className="w-full border p-2 rounded"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="Worker name"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1 flex items-center">
+                  <Briefcase className="inline mr-1" /> Work Role
+                </label>
+                <input
+                  className="w-full border p-2 rounded"
+                  value={role}
+                  onChange={e => setRole(e.target.value)}
+                  placeholder="e.g. Mason, Electrician"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1 flex items-center">
+                  <DollarSign className="inline mr-1" /> Wage
+                </label>
+                <div className="flex gap-1">
+                  <input
+                    type="number"
+                    className="w-1/2 border p-2 rounded"
+                    value={wage}
+                    onChange={e => setWage(e.target.value)}
+                    placeholder="e.g. 800"
+                  />
+                  <select className="w-1/2 border p-2 rounded" value={wageType} onChange={e => setWageType(e.target.value)}>
+                    <option value="Day">Per Day</option>
+                    <option value="Hour">Per Hour</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1 flex items-center">
+                  <Phone className="inline mr-1" /> Phone
+                </label>
+                <input
+                  className="w-full border p-2 rounded"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  placeholder="Phone number"
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-2">
+                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Add
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export default function Attendance() {
   const [sites, setSites] = useState<Site[]>([]);
@@ -26,6 +147,7 @@ export default function Attendance() {
   const [presentCount, setPresentCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [workers, setWorkers] = useState<Worker[]>([]);
+  const [deletingWorkerId, setDeletingWorkerId] = useState<string | null>(null);
 
   useEffect(() => {
     loadSites();
@@ -127,6 +249,20 @@ export default function Attendance() {
     return time;
   };
 
+  const handleDeleteWorker = async (workerId: string) => {
+    setDeletingWorkerId(workerId);
+    try {
+      await workerService.deleteWorker(workerId);
+      setWorkers(workers => workers.filter(w => w.id !== workerId));
+      toast.success("Worker deleted");
+      loadAttendanceRecords();
+    } catch (e) {
+      toast.error("Failed to delete worker");
+    } finally {
+      setDeletingWorkerId(null);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in">
       <div className="flex items-center justify-between">
@@ -138,7 +274,7 @@ export default function Attendance() {
         </div>
         <div className="flex gap-2">
           {selectedSite !== "all" && (
-            <NewWorkerDialog siteId={selectedSite} onWorkerAdded={loadWorkers} />
+            <AddWorkerDialog siteId={selectedSite} onWorkerAdded={loadWorkers} />
           )}
           <Button variant="outline" onClick={handleExportToExcel}>
             <FileSpreadsheet className="mr-2 h-4 w-4" />
@@ -239,7 +375,7 @@ export default function Attendance() {
                               {record.status}
                             </span>
                           </TableCell>
-                          <TableCell>{record.overtimeHours} hour(s)</TableCell>
+                          <TableCell>{record.overtimeHours} hour(s)}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
                               {record.status !== "Present" && (
@@ -263,6 +399,19 @@ export default function Attendance() {
                               <Button variant="outline" size="sm">
                                 Edit
                               </Button>
+                              {workers.find(w => w.worker_id === record.workerId) && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  disabled={deletingWorkerId === record.workerId}
+                                  onClick={() => handleDeleteWorker(
+                                    workers.find(w => w.worker_id === record.workerId)?.id || ""
+                                  )}
+                                >
+                                  <UserMinus className="mr-1 h-4 w-4" />
+                                  {deletingWorkerId === record.workerId ? "Deleting..." : "Delete"}
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>

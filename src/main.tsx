@@ -1,11 +1,10 @@
-
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { authService } from './services/authService.ts';
 import { siteService } from './services/siteService.ts';
 import { workerService } from './services/workerService.ts';
-import { addSampleWorkers } from './services/workerSample.ts';
+import { addSampleWorkers } from './services/workerService.ts';
 import { attendanceService } from './services/attendanceService.ts';
 import { localStorageService } from './services/localStorage.ts';
 import { Site } from '@/models/site.ts';
