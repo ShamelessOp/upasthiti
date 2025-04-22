@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +13,6 @@ import { workerService } from "@/services/workerService";
 import { Site } from "@/models/site";
 import { Worker } from "@/models/worker";
 import { toast } from "sonner";
-import { NewWorkerDialog } from "./components/NewWorkerDialog";
 import { AddWorkerDialog } from "./components/AddWorkerDialog";
 import * as XLSX from 'xlsx';
 
