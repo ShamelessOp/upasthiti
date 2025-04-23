@@ -1,5 +1,12 @@
 
-import { Sidebar, SidebarFooter, SidebarNav, SidebarNavItem } from "@/components/ui/sidebar";
+import { 
+  Sidebar, 
+  SidebarFooter, 
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton
+} from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -26,62 +33,94 @@ export function AppSidebar() {
           </span>
         </div>
       </div>
-      <SidebarNav className="my-4">
-        <SidebarNavItem
-          icon={<Building2 className="h-5 w-5" />}
-          href="/sites"
-          text="Sites"
-          isActive={location.pathname === "/sites" || location.pathname.startsWith("/sites/")}
-        />
-        <SidebarNavItem
-          icon={<ClipboardList className="h-5 w-5" />}
-          href="/attendance"
-          text="Attendance"
-          isActive={location.pathname === "/attendance"}
-        />
-        <SidebarNavItem
-          icon={<DollarSign className="h-5 w-5" />}
-          href="/payroll"
-          text="Payroll"
-          isActive={location.pathname === "/payroll"}
-        />
-        <SidebarNavItem
-          icon={<PackageOpen className="h-5 w-5" />}
-          href="/inventory"
-          text="Inventory"
-          isActive={location.pathname === "/inventory"}
-        />
-        <SidebarNavItem
-          icon={<LineChart className="h-5 w-5" />}
-          href="/reports"
-          text="Reports"
-          isActive={location.pathname === "/reports"}
-        />
-        
-        {/* Admin-only menu items */}
-        {isAdmin && (
-          <>
-            <SidebarNavItem
-              icon={<Users className="h-5 w-5" />}
-              href="/users"
-              text="Users"
-              isActive={location.pathname === "/users"}
-            />
-            <SidebarNavItem
-              icon={<Settings className="h-5 w-5" />}
-              href="/settings"
-              text="Settings"
-              isActive={location.pathname === "/settings"}
-            />
-            <SidebarNavItem
-              icon={<Wifi className="h-5 w-5" />}
-              href="/iot-controls"
-              text="IoT Controls"
-              isActive={location.pathname === "/iot-controls"}
-            />
-          </>
-        )}
-      </SidebarNav>
+      <SidebarContent className="my-4">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              icon={<Building2 className="h-5 w-5" />}
+              isActive={location.pathname === "/sites" || location.pathname.startsWith("/sites/")}
+              asChild
+            >
+              <a href="/sites">Sites</a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              icon={<ClipboardList className="h-5 w-5" />}
+              isActive={location.pathname === "/attendance"}
+              asChild
+            >
+              <a href="/attendance">Attendance</a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              icon={<DollarSign className="h-5 w-5" />}
+              isActive={location.pathname === "/payroll"}
+              asChild
+            >
+              <a href="/payroll">Payroll</a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              icon={<PackageOpen className="h-5 w-5" />}
+              isActive={location.pathname === "/inventory"}
+              asChild
+            >
+              <a href="/inventory">Inventory</a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              icon={<LineChart className="h-5 w-5" />}
+              isActive={location.pathname === "/reports"}
+              asChild
+            >
+              <a href="/reports">Reports</a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          {/* Admin-only menu items */}
+          {isAdmin && (
+            <>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  icon={<Users className="h-5 w-5" />}
+                  isActive={location.pathname === "/users"}
+                  asChild
+                >
+                  <a href="/users">Users</a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  icon={<Settings className="h-5 w-5" />}
+                  isActive={location.pathname === "/settings"}
+                  asChild
+                >
+                  <a href="/settings">Settings</a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  icon={<Wifi className="h-5 w-5" />}
+                  isActive={location.pathname === "/iot-controls"}
+                  asChild
+                >
+                  <a href="/iot-controls">IoT Controls</a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </>
+          )}
+        </SidebarMenu>
+      </SidebarContent>
       <SidebarFooter>
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2">
