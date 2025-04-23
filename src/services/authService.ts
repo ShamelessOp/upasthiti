@@ -1,9 +1,11 @@
+
 import { User, UserCredentials, UserRegistration, UserRole } from "@/models/user";
 import { apiRequest } from "./api";
 import { localStorageService } from "./localStorage";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-// In-memory mock user database
+// Mock users (only used if Supabase auth fails)
 const MOCK_USERS = [
   {
     id: "1",
@@ -55,7 +57,7 @@ export const authService = {
     return localStorageService.get<User>(USER_STORAGE_KEY);
   },
 
-  // Login user
+  // Login user (fallback for mock auth)
   async login(credentials: UserCredentials): Promise<User | null> {
     return apiRequest<User>(async () => {
       // Find user by email and password
@@ -98,7 +100,7 @@ export const authService = {
     }, "Login failed").then(response => response.data);
   },
 
-  // Register new user
+  // Register new user (fallback for mock auth)
   async register(userData: UserRegistration): Promise<User | null> {
     return apiRequest<User>(async () => {
       // Check if email is already in use
@@ -142,50 +144,52 @@ export const authService = {
   logout(): void {
     localStorageService.remove(USER_STORAGE_KEY);
     localStorageService.remove(TOKEN_STORAGE_KEY);
-    toast.success("Successfully logged out");
   },
 
-  // Check if user has specific role
-  hasRole(role: UserRole | UserRole[]): boolean {
-    const user = this.getCurrentUser();
-    if (!user) return false;
-    
-    if (Array.isArray(role)) {
-      return role.includes(user.role);
-    }
-    
-    return user.role === role;
-  },
-
-  // Get authentication token
-  getToken(): string | null {
-    return localStorageService.get<string>(TOKEN_STORAGE_KEY);
-  },
-
-  // Auto-login for development/demo purposes (new function)
+  // Auto-login for development/demo purposes
   async autoLogin(): Promise<any> {
     try {
-      console.log("Auto-logging in as admin...");
+      console.log("Checking for existing session...");
       
-      // Check if already logged in
+      // First check Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        console.log("Found existing Supabase session");
+        const currentUser = {
+          id: session.user.id,
+          name: session.user.user_metadata?.name || "User",
+          email: session.user.email || "",
+          role: (session.user.user_metadata?.role as UserRole) || "siteManager",
+          createdAt: session.user.created_at,
+          lastLogin: new Date().toISOString()
+        };
+        
+        // Store locally for compatibility with existing code
+        localStorageService.set(USER_STORAGE_KEY, currentUser);
+        return currentUser;
+      }
+      
+      // If no session, use demo admin for development
+      console.log("No session found, using demo admin user...");
       const currentUser = this.getCurrentUser();
       if (currentUser) {
         console.log("User already logged in:", currentUser);
         return currentUser;
       }
       
-      // Create a demo admin user
+      // Create a demo admin user only for admin@upastithi.com
       const adminUser = {
         id: "admin-123",
         email: "admin@upastithi.com",
         name: "Demo Admin",
-        role: "admin",
-        created_at: new Date().toISOString()
+        role: "admin" as UserRole,
+        createdAt: new Date().toISOString(),
       };
       
       // Store in localStorage
-      localStorage.setItem('upastithi_user', JSON.stringify(adminUser));
-      localStorage.setItem('upastithi_authenticated', 'true');
+      localStorageService.set(USER_STORAGE_KEY, adminUser);
+      localStorageService.set('upastithi_authenticated', 'true');
       
       console.log("Auto-logged in as:", adminUser);
       return adminUser;
@@ -200,5 +204,11 @@ export const authService = {
     const expiration = new Date();
     expiration.setHours(expiration.getHours() + hours);
     localStorageService.set("sessionExpires", expiration.toISOString());
+  },
+  
+  // Check if user is admin
+  isAdmin(user: User | null): boolean {
+    if (!user) return false;
+    return user.role === 'admin' || user.email === 'admin@upastithi.com';
   }
 };

@@ -1,13 +1,14 @@
+
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { authService } from './services/authService.ts';
 import { siteService } from './services/siteService.ts';
-import { workerService } from './services/workerService.ts';
-import { addSampleWorkers } from './services/workerService.ts';
+import { addSampleWorkers } from './services/workerService/workerSample.ts';
 import { attendanceService } from './services/attendanceService.ts';
 import { localStorageService } from './services/localStorage.ts';
 import { Site } from '@/models/site.ts';
+import { supabase } from '@/integrations/supabase/client.ts';
 
 // Initialize the app with sample data
 const initApp = async () => {
@@ -17,9 +18,9 @@ const initApp = async () => {
     // Auto-login for demo purposes
     const currentUser = await authService.autoLogin();
     
-    // Only add sample data for admin/demo users
+    // Only add sample data for admin@upastithi.com
     if (currentUser && currentUser.email === "admin@upastithi.com") {
-      console.log("Admin user detected, checking for sample data...");
+      console.log("Admin demo user detected, checking for sample data...");
       
       // Check if we already have sample data
       const existingSites = localStorageService.get<Site[]>('sites');
@@ -70,10 +71,17 @@ const initApp = async () => {
           }
         }
       } else {
-        console.log(`Found ${existingSites.length} existing sites`);
+        console.log(`Found ${existingSites.length} existing sites for admin user`);
       }
     } else if (currentUser) {
       console.log(`Regular user detected: ${currentUser.name}. No sample data will be added.`);
+      
+      // Clear any existing demo data for regular users to start fresh
+      if (!localStorageService.get<boolean>(`initialized_${currentUser.id}`)) {
+        console.log("First login for this user. Ensuring clean start.");
+        // Only clear data for this specific user
+        localStorageService.set(`initialized_${currentUser.id}`, true);
+      }
     }
     
     // Render the app

@@ -17,28 +17,26 @@ interface AppLayoutProps {
 export function AppLayout({ children, requireAuth = true }: AppLayoutProps) {
   const { isAuthenticated, loading, user } = useAuth();
   const isNewUser = user && !localStorageService.get<boolean>(`tour_shown_${user.id}`);
-
+  
   useEffect(() => {
-    // For new users, we want to ensure they have a clean start
-    if (isNewUser) {
-      console.log("New user detected, preparing clean environment");
+    // Check if we need to handle a new real user (not the demo admin)
+    if (user && user.email !== "admin@upastithi.com") {
+      const userDataInitialized = localStorageService.get<boolean>(`data_initialized_${user.id}`);
       
-      // We don't clear everything as that would log them out
-      // Instead we ensure they don't have sample data by checking a flag
-      
-      const hasInitializedOwnData = localStorageService.get<boolean>(`data_initialized_${user.id}`);
-      
-      if (!hasInitializedOwnData) {
-        // Clear site-related data only for this new user
-        const allSites = localStorageService.get<Site[]>('sites') || [];
-        const otherUsersSites = allSites.filter(site => site.supervisor_id !== user.id);
-        localStorageService.set('sites', otherUsersSites);
+      if (!userDataInitialized) {
+        console.log("New user detected, ensuring clean environment for:", user.email);
         
-        // Mark as initialized for this user
+        // Don't clear all data, as that would affect the demo admin
+        // Instead, we'll use user-specific logic in the services to filter data
+        
+        // Mark this user as initialized so we don't repeat the cleanup
         localStorageService.set(`data_initialized_${user.id}`, true);
+        
+        // Show Welcome tour for new users
+        localStorageService.set(`tour_shown_${user.id}`, false);
       }
     }
-  }, [isNewUser, user]);
+  }, [user]);
 
   if (requireAuth && !loading && !isAuthenticated) {
     return <Navigate to="/login" />;

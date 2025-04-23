@@ -1,161 +1,104 @@
 
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarFooter, SidebarNav, SidebarNavItem } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigate, useLocation } from "react-router-dom";
+import { LogOut, Settings, Users, Building2, ClipboardList, DollarSign, PackageOpen, LineChart, Wifi } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
-import {
-  Building,
-  Calendar,
-  ChevronsLeft,
-  ChevronsRight,
-  ClipboardList,
-  DollarSign,
-  LogOut,
-  Package,
-  Settings,
-  User,
-  Users,
-  Droplet,
-} from "lucide-react";
 
 export function AppSidebar() {
-  const { pathname } = useLocation();
-  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, logout, isAdmin } = useAuth();
   
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
   return (
-    <Sidebar className="border-r border-border">
-      <SidebarHeader className="flex h-14 items-center border-b border-border px-4">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="font-bold text-xl text-sidebar-foreground">Upastithi</span>
-        </Link>
-        <div className="ml-auto flex items-center gap-2">
-          <SidebarTrigger>
-            <ChevronsLeft className="h-4 w-4 sidebar-expanded:hidden" />
-            <ChevronsRight className="h-4 w-4 hidden sidebar-expanded:block" />
-            <span className="sr-only">Toggle Sidebar</span>
-          </SidebarTrigger>
+    <Sidebar>
+      <div className="flex h-14 items-center border-b px-4">
+        <div className="font-semibold">
+          <span className="inline-block font-bold">Upastithi</span>
+          <span className="inline-block ml-1 rounded bg-primary px-1.5 py-0.5 text-xs font-medium text-white">
+            App
+          </span>
         </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/sites")}>
-                <Link to="/sites">
-                  <Building className="h-4 w-4" />
-                  <span>Sites</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/attendance")}>
-                <Link to="/attendance">
-                  <Calendar className="h-4 w-4" />
-                  <span>Attendance</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/payroll")}>
-                <Link to="/payroll">
-                  <DollarSign className="h-4 w-4" />
-                  <span>Payroll</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/inventory")}>
-                <Link to="/inventory">
-                  <Package className="h-4 w-4" />
-                  <span>Inventory</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/iot-controls")}>
-                <Link to="/iot-controls">
-                  <Droplet className="h-4 w-4" />
-                  <span>IoT Controls</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/cashbook")}>
-                <Link to="/cashbook">
-                  <ClipboardList className="h-4 w-4" />
-                  <span>Cashbook</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            {(user?.role === "admin" || user?.role === "supervisor") && (
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/reports")}>
-                  <Link to="/reports">
-                    <ClipboardList className="h-4 w-4" />
-                    <span>Reports</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
-          </SidebarMenu>
-        </SidebarGroup>
+      </div>
+      <SidebarNav className="my-4">
+        <SidebarNavItem
+          icon={<Building2 className="h-5 w-5" />}
+          href="/sites"
+          text="Sites"
+          isActive={location.pathname === "/sites" || location.pathname.startsWith("/sites/")}
+        />
+        <SidebarNavItem
+          icon={<ClipboardList className="h-5 w-5" />}
+          href="/attendance"
+          text="Attendance"
+          isActive={location.pathname === "/attendance"}
+        />
+        <SidebarNavItem
+          icon={<DollarSign className="h-5 w-5" />}
+          href="/payroll"
+          text="Payroll"
+          isActive={location.pathname === "/payroll"}
+        />
+        <SidebarNavItem
+          icon={<PackageOpen className="h-5 w-5" />}
+          href="/inventory"
+          text="Inventory"
+          isActive={location.pathname === "/inventory"}
+        />
+        <SidebarNavItem
+          icon={<LineChart className="h-5 w-5" />}
+          href="/reports"
+          text="Reports"
+          isActive={location.pathname === "/reports"}
+        />
         
-        {user?.role === "admin" && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Administration</SidebarGroupLabel>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/users")}>
-                  <Link to="/users">
-                    <Users className="h-4 w-4" />
-                    <span>Users</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/settings")}>
-                  <Link to="/settings">
-                    <Settings className="h-4 w-4" />
-                    <span>Settings</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
+        {/* Admin-only menu items */}
+        {isAdmin && (
+          <>
+            <SidebarNavItem
+              icon={<Users className="h-5 w-5" />}
+              href="/users"
+              text="Users"
+              isActive={location.pathname === "/users"}
+            />
+            <SidebarNavItem
+              icon={<Settings className="h-5 w-5" />}
+              href="/settings"
+              text="Settings"
+              isActive={location.pathname === "/settings"}
+            />
+            <SidebarNavItem
+              icon={<Wifi className="h-5 w-5" />}
+              href="/iot-controls"
+              text="IoT Controls"
+              isActive={location.pathname === "/iot-controls"}
+            />
+          </>
         )}
-      </SidebarContent>
-      <SidebarFooter className="border-t p-4">
-        {user && (
+      </SidebarNav>
+      <SidebarFooter>
+        <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
-              <User className="h-4 w-4" />
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="" />
+              <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-medium">{user?.name || "User"}</p>
+              <p className="text-xs opacity-60">{user?.role || "User"}</p>
             </div>
-            <div className="flex flex-col text-sm">
-              <span>{user.name}</span>
-              <span className="text-xs text-sidebar-foreground/60">{user.email}</span>
-            </div>
-            <button
-              className="ml-auto rounded-full p-2 text-sidebar-foreground/60 hover:text-sidebar-foreground"
-              onClick={logout}
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="sr-only">Log out</span>
-            </button>
           </div>
-        )}
+          <Button variant="ghost" size="icon" onClick={handleLogout}>
+            <LogOut className="h-5 w-5" />
+            <span className="sr-only">Logout</span>
+          </Button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
