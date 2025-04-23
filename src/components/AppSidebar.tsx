@@ -37,51 +37,61 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton 
-              icon={<Building2 className="h-5 w-5" />}
               isActive={location.pathname === "/sites" || location.pathname.startsWith("/sites/")}
               asChild
             >
-              <a href="/sites">Sites</a>
+              <a href="/sites">
+                <Building2 className="h-5 w-5" />
+                <span>Sites</span>
+              </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
           <SidebarMenuItem>
             <SidebarMenuButton 
-              icon={<ClipboardList className="h-5 w-5" />}
               isActive={location.pathname === "/attendance"}
               asChild
             >
-              <a href="/attendance">Attendance</a>
+              <a href="/attendance">
+                <ClipboardList className="h-5 w-5" />
+                <span>Attendance</span>
+              </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
           <SidebarMenuItem>
             <SidebarMenuButton 
-              icon={<DollarSign className="h-5 w-5" />}
               isActive={location.pathname === "/payroll"}
               asChild
             >
-              <a href="/payroll">Payroll</a>
+              <a href="/payroll">
+                <DollarSign className="h-5 w-5" />
+                <span>Payroll</span>
+              </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
           <SidebarMenuItem>
             <SidebarMenuButton 
-              icon={<PackageOpen className="h-5 w-5" />}
               isActive={location.pathname === "/inventory"}
               asChild
             >
-              <a href="/inventory">Inventory</a>
+              <a href="/inventory">
+                <PackageOpen className="h-5 w-5" />
+                <span>Inventory</span>
+              </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
           <SidebarMenuItem>
             <SidebarMenuButton 
-              icon={<LineChart className="h-5 w-5" />}
               isActive={location.pathname === "/reports"}
               asChild
             >
-              <a href="/reports">Reports</a>
+              <a href="/reports">
+                <LineChart className="h-5 w-5" />
+                <span>Reports</span>
+              </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
           
@@ -90,31 +100,37 @@ export function AppSidebar() {
             <>
               <SidebarMenuItem>
                 <SidebarMenuButton 
-                  icon={<Users className="h-5 w-5" />}
                   isActive={location.pathname === "/users"}
                   asChild
                 >
-                  <a href="/users">Users</a>
+                  <a href="/users">
+                    <Users className="h-5 w-5" />
+                    <span>Users</span>
+                  </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
               <SidebarMenuItem>
                 <SidebarMenuButton 
-                  icon={<Settings className="h-5 w-5" />}
                   isActive={location.pathname === "/settings"}
                   asChild
                 >
-                  <a href="/settings">Settings</a>
+                  <a href="/settings">
+                    <Settings className="h-5 w-5" />
+                    <span>Settings</span>
+                  </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
               <SidebarMenuItem>
                 <SidebarMenuButton 
-                  icon={<Wifi className="h-5 w-5" />}
                   isActive={location.pathname === "/iot-controls"}
                   asChild
                 >
-                  <a href="/iot-controls">IoT Controls</a>
+                  <a href="/iot-controls">
+                    <Wifi className="h-5 w-5" />
+                    <span>IoT Controls</span>
+                  </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </>
