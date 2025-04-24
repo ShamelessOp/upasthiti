@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,7 +22,6 @@ import Cashbook from "@/pages/Cashbook/Cashbook";
 import Settings from "@/pages/Settings/Settings";
 import Reports from "@/pages/Reports/Reports";
 import IoTControls from "@/pages/IoTControls/IoTControls";
-import AdminRoute from "@/components/AdminRoute";
 
 // Not Found Page
 import NotFound from "./pages/NotFound";
@@ -44,30 +44,14 @@ const App = () => (
             <Route path="/" element={<Navigate to="/sites" replace />} />
             <Route path="/sites" element={<AppLayout><Sites /></AppLayout>} />
             <Route path="/sites/:siteId/*" element={<AppLayout><Dashboard /></AppLayout>} />
-            
-            {/* Admin-only routes */}
-            <Route path="/users" element={
-              <AdminRoute>
-                <AppLayout><Users /></AppLayout>
-              </AdminRoute>
-            } />
-            <Route path="/settings" element={
-              <AdminRoute>
-                <AppLayout><Settings /></AppLayout>
-              </AdminRoute>
-            } />
-            <Route path="/iot-controls" element={
-              <AdminRoute>
-                <AppLayout><IoTControls /></AppLayout>
-              </AdminRoute>
-            } />
-            
-            {/* Other Routes */}
+            <Route path="/users" element={<AppLayout><Users /></AppLayout>} />
             <Route path="/attendance" element={<AppLayout><Attendance /></AppLayout>} />
             <Route path="/payroll" element={<AppLayout><Payroll /></AppLayout>} />
             <Route path="/inventory" element={<AppLayout><Inventory /></AppLayout>} />
             <Route path="/cashbook" element={<AppLayout><Cashbook /></AppLayout>} />
+            <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
             <Route path="/reports" element={<AppLayout><Reports /></AppLayout>} />
+            <Route path="/iot-controls" element={<AppLayout><IoTControls /></AppLayout>} />
 
             {/* Redirect to home if no match */}
             <Route path="*" element={<NotFound />} />

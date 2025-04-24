@@ -1,159 +1,161 @@
 
-import { 
-  Sidebar, 
-  SidebarFooter, 
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  Sidebar,
   SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton
+  SidebarMenuButton,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useNavigate, useLocation } from "react-router-dom";
-import { LogOut, Settings, Users, Building2, ClipboardList, DollarSign, PackageOpen, LineChart, Wifi } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
+import {
+  Building,
+  Calendar,
+  ChevronsLeft,
+  ChevronsRight,
+  ClipboardList,
+  DollarSign,
+  LogOut,
+  Package,
+  Settings,
+  User,
+  Users,
+  Droplet,
+} from "lucide-react";
 
 export function AppSidebar() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user, logout, isAdmin } = useAuth();
+  const { pathname } = useLocation();
+  const { user, logout } = useAuth();
   
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
-
   return (
-    <Sidebar>
-      <div className="flex h-14 items-center border-b px-4">
-        <div className="font-semibold">
-          <span className="inline-block font-bold">Upastithi</span>
-          <span className="inline-block ml-1 rounded bg-primary px-1.5 py-0.5 text-xs font-medium text-white">
-            App
-          </span>
+    <Sidebar className="border-r border-border">
+      <SidebarHeader className="flex h-14 items-center border-b border-border px-4">
+        <Link to="/" className="flex items-center gap-2">
+          <span className="font-bold text-xl text-sidebar-foreground">Upastithi</span>
+        </Link>
+        <div className="ml-auto flex items-center gap-2">
+          <SidebarTrigger>
+            <ChevronsLeft className="h-4 w-4 sidebar-expanded:hidden" />
+            <ChevronsRight className="h-4 w-4 hidden sidebar-expanded:block" />
+            <span className="sr-only">Toggle Sidebar</span>
+          </SidebarTrigger>
         </div>
-      </div>
-      <SidebarContent className="my-4">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton 
-              isActive={location.pathname === "/sites" || location.pathname.startsWith("/sites/")}
-              asChild
-            >
-              <a href="/sites">
-                <Building2 className="h-5 w-5" />
-                <span>Sites</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-
-          <SidebarMenuItem>
-            <SidebarMenuButton 
-              isActive={location.pathname === "/attendance"}
-              asChild
-            >
-              <a href="/attendance">
-                <ClipboardList className="h-5 w-5" />
-                <span>Attendance</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-
-          <SidebarMenuItem>
-            <SidebarMenuButton 
-              isActive={location.pathname === "/payroll"}
-              asChild
-            >
-              <a href="/payroll">
-                <DollarSign className="h-5 w-5" />
-                <span>Payroll</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-
-          <SidebarMenuItem>
-            <SidebarMenuButton 
-              isActive={location.pathname === "/inventory"}
-              asChild
-            >
-              <a href="/inventory">
-                <PackageOpen className="h-5 w-5" />
-                <span>Inventory</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-
-          <SidebarMenuItem>
-            <SidebarMenuButton 
-              isActive={location.pathname === "/reports"}
-              asChild
-            >
-              <a href="/reports">
-                <LineChart className="h-5 w-5" />
-                <span>Reports</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          
-          {/* Admin-only menu items */}
-          {isAdmin && (
-            <>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/sites")}>
+                <Link to="/sites">
+                  <Building className="h-4 w-4" />
+                  <span>Sites</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/attendance")}>
+                <Link to="/attendance">
+                  <Calendar className="h-4 w-4" />
+                  <span>Attendance</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/payroll")}>
+                <Link to="/payroll">
+                  <DollarSign className="h-4 w-4" />
+                  <span>Payroll</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/inventory")}>
+                <Link to="/inventory">
+                  <Package className="h-4 w-4" />
+                  <span>Inventory</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/iot-controls")}>
+                <Link to="/iot-controls">
+                  <Droplet className="h-4 w-4" />
+                  <span>IoT Controls</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/cashbook")}>
+                <Link to="/cashbook">
+                  <ClipboardList className="h-4 w-4" />
+                  <span>Cashbook</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            {(user?.role === "admin" || user?.role === "supervisor") && (
               <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={location.pathname === "/users"}
-                  asChild
-                >
-                  <a href="/users">
-                    <Users className="h-5 w-5" />
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/reports")}>
+                  <Link to="/reports">
+                    <ClipboardList className="h-4 w-4" />
+                    <span>Reports</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+          </SidebarMenu>
+        </SidebarGroup>
+        
+        {user?.role === "admin" && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administration</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/users")}>
+                  <Link to="/users">
+                    <Users className="h-4 w-4" />
                     <span>Users</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-
               <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={location.pathname === "/settings"}
-                  asChild
-                >
-                  <a href="/settings">
-                    <Settings className="h-5 w-5" />
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/settings")}>
+                  <Link to="/settings">
+                    <Settings className="h-4 w-4" />
                     <span>Settings</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={location.pathname === "/iot-controls"}
-                  asChild
-                >
-                  <a href="/iot-controls">
-                    <Wifi className="h-5 w-5" />
-                    <span>IoT Controls</span>
-                  </a>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </>
-          )}
-        </SidebarMenu>
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
       </SidebarContent>
-      <SidebarFooter>
-        <div className="flex items-center justify-between p-4">
+      <SidebarFooter className="border-t p-4">
+        {user && (
           <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src="" />
-              <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-sm font-medium">{user?.name || "User"}</p>
-              <p className="text-xs opacity-60">{user?.role || "User"}</p>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
+              <User className="h-4 w-4" />
             </div>
+            <div className="flex flex-col text-sm">
+              <span>{user.name}</span>
+              <span className="text-xs text-sidebar-foreground/60">{user.email}</span>
+            </div>
+            <button
+              className="ml-auto rounded-full p-2 text-sidebar-foreground/60 hover:text-sidebar-foreground"
+              onClick={logout}
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="sr-only">Log out</span>
+            </button>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleLogout}>
-            <LogOut className="h-5 w-5" />
-            <span className="sr-only">Logout</span>
-          </Button>
-        </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
