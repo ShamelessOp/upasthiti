@@ -8,6 +8,13 @@ import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supab
 type TableName = 'sites' | 'workers' | 'attendance' | 'profiles';
 type ChangeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*';
 
+// Define the payload type for postgres_changes events
+type PostgresChangesPayload = {
+  new: Record<string, any> | null;
+  old: Record<string, any> | null;
+  errors: any;
+};
+
 export function useRealtimeData(tableName: TableName, queryKey: string | string[], events: ChangeEvent[] = ['*']) {
   const queryClient = useQueryClient();
   
@@ -36,7 +43,7 @@ export function useRealtimeData(tableName: TableName, queryKey: string | string[
                 schema: 'public',
                 table: tableName,
               },
-              (payload) => {
+              (payload: PostgresChangesPayload) => {
                 console.log(`${specificEvent} event on ${tableName}:`, payload);
                 queryClient.invalidateQueries({ queryKey: Array.isArray(queryKey) ? queryKey : [queryKey] });
                 
@@ -65,7 +72,7 @@ export function useRealtimeData(tableName: TableName, queryKey: string | string[
               schema: 'public',
               table: tableName,
             },
-            (payload) => {
+            (payload: PostgresChangesPayload) => {
               console.log(`${event} event on ${tableName}:`, payload);
               queryClient.invalidateQueries({ queryKey: Array.isArray(queryKey) ? queryKey : [queryKey] });
               
