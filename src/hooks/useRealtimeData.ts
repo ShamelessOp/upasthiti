@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 type TableName = 'sites' | 'workers' | 'attendance' | 'profiles';
 type ChangeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*';
@@ -29,7 +30,7 @@ export function useRealtimeData(tableName: TableName, queryKey: string | string[
           // Subscribe to all events
           ['INSERT', 'UPDATE', 'DELETE'].forEach(specificEvent => {
             channel.on(
-              'postgres_changes',
+              'postgres_changes' as any,
               {
                 event: specificEvent as 'INSERT' | 'UPDATE' | 'DELETE',
                 schema: 'public',
@@ -58,7 +59,7 @@ export function useRealtimeData(tableName: TableName, queryKey: string | string[
         } else {
           // Subscribe to specific event
           channel.on(
-            'postgres_changes',
+            'postgres_changes' as any,
             {
               event: event,
               schema: 'public',
