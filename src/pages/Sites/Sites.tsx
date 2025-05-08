@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Building, Loader2, Plus } from 'lucide-react';
@@ -8,15 +8,25 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { siteService } from '@/services/siteService';
 import { Site } from '@/models/site';
 import NewSiteDialog from './components/NewSiteDialog';
+import { useRealtimeData } from '@/hooks/useRealtimeData';
 
 export default function Sites() {
   const navigate = useNavigate();
   const [showNewSiteDialog, setShowNewSiteDialog] = React.useState(false);
   
-  const { data: sites, isLoading } = useQuery({
+  const { data: sites, isLoading, refetch } = useQuery({
     queryKey: ['sites'],
     queryFn: siteService.getAllSites,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Set up realtime data subscription
+  useRealtimeData('sites', 'sites');
+  
+  useEffect(() => {
+    // Initial data fetch
+    refetch();
+  }, [refetch]);
 
   if (isLoading) {
     return (

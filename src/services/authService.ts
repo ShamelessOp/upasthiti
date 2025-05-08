@@ -1,9 +1,11 @@
+
 import { User, UserCredentials, UserRegistration, UserRole } from "@/models/user";
 import { apiRequest } from "./api";
 import { localStorageService } from "./localStorage";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-// In-memory mock user database
+// In-memory mock user database for development/demo purposes
 const MOCK_USERS = [
   {
     id: "1",
@@ -54,8 +56,21 @@ export const authService = {
   getCurrentUser(): User | null {
     return localStorageService.get<User>(USER_STORAGE_KEY);
   },
+  
+  // Update local user (for compatibility)
+  updateLocalUser(user: User): void {
+    localStorageService.set(USER_STORAGE_KEY, user);
+    localStorageService.set(TOKEN_STORAGE_KEY, `mock-token-${user.id}`);
+    this.setSessionTimeout();
+  },
+  
+  // Clear local user
+  clearLocalUser(): void {
+    localStorageService.remove(USER_STORAGE_KEY);
+    localStorageService.remove(TOKEN_STORAGE_KEY);
+  },
 
-  // Login user
+  // Login user (fallback for demo)
   async login(credentials: UserCredentials): Promise<User | null> {
     return apiRequest<User>(async () => {
       // Find user by email and password
@@ -83,22 +98,13 @@ export const authService = {
       // Set a default session timeout for 24 hours
       this.setSessionTimeout();
       
-      // Check if this user has initialized data before
-      const hasInitialized = localStorageService.get<boolean>(`data_initialized_${userSession.id}`);
+      console.log("Logged in mock user:", userSession);
       
-      // If this is a first-time login for this user, prepare their environment
-      if (!hasInitialized) {
-        console.log("First login for user:", userSession.id);
-        // This flag will be used to show the welcome tour
-        // The actual data initialization happens in AppLayout
-      }
-      
-      toast.success("Successfully logged in");
       return userSession;
     }, "Login failed").then(response => response.data);
   },
 
-  // Register new user
+  // Register new user (fallback for demo)
   async register(userData: UserRegistration): Promise<User | null> {
     return apiRequest<User>(async () => {
       // Check if email is already in use
@@ -133,7 +139,6 @@ export const authService = {
       // Set a default session timeout
       this.setSessionTimeout();
       
-      toast.success("Account created successfully");
       return userSession;
     }, "Registration failed").then(response => response.data);
   },
@@ -142,7 +147,6 @@ export const authService = {
   logout(): void {
     localStorageService.remove(USER_STORAGE_KEY);
     localStorageService.remove(TOKEN_STORAGE_KEY);
-    toast.success("Successfully logged out");
   },
 
   // Check if user has specific role
@@ -162,32 +166,71 @@ export const authService = {
     return localStorageService.get<string>(TOKEN_STORAGE_KEY);
   },
 
-  // Auto-login for development/demo purposes (new function)
+  // Auto-login for development/demo purposes
   async autoLogin(): Promise<any> {
     try {
       console.log("Auto-logging in as admin...");
       
-      // Check if already logged in
+      // Check if already logged in via Supabase
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        console.log("User already logged in via Supabase:", data.session.user);
+        return {
+          id: data.session.user.id,
+          name: data.session.user.user_metadata.name || data.session.user.email?.split('@')[0] || 'Demo User',
+          email: data.session.user.email,
+          role: data.session.user.user_metadata.role || 'admin',
+          createdAt: data.session.user.created_at,
+          lastLogin: new Date().toISOString()
+        };
+      }
+      
+      // Check if already logged in via local storage
       const currentUser = this.getCurrentUser();
       if (currentUser) {
-        console.log("User already logged in:", currentUser);
+        console.log("User already logged in via local storage:", currentUser);
         return currentUser;
       }
       
-      // Create a demo admin user
+      // Try to sign in with Supabase
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: "admin@upastithi.com",
+          password: "password123"
+        });
+        
+        if (!error && data.user) {
+          console.log("Auto-logged in via Supabase:", data.user);
+          const user = {
+            id: data.user.id,
+            name: data.user.user_metadata.name || 'Demo Admin',
+            email: data.user.email || 'admin@upastithi.com',
+            role: data.user.user_metadata.role || 'admin',
+            createdAt: data.user.created_at,
+            lastLogin: new Date().toISOString()
+          };
+          
+          this.updateLocalUser(user);
+          return user;
+        }
+      } catch (supabaseError) {
+        console.error("Supabase auto-login failed:", supabaseError);
+      }
+      
+      // Fall back to mock user
       const adminUser = {
         id: "admin-123",
         email: "admin@upastithi.com",
         name: "Demo Admin",
         role: "admin",
-        created_at: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString()
       };
       
       // Store in localStorage
-      localStorage.setItem('upastithi_user', JSON.stringify(adminUser));
-      localStorage.setItem('upastithi_authenticated', 'true');
+      this.updateLocalUser(adminUser);
       
-      console.log("Auto-logged in as:", adminUser);
+      console.log("Auto-logged in as mock user:", adminUser);
       return adminUser;
     } catch (error) {
       console.error("Auto-login failed:", error);
