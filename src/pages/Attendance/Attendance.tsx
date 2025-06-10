@@ -50,8 +50,12 @@ export default function Attendance() {
 
   const loadWorkers = async () => {
     try {
-      const workerData = await workerService.getAllWorkers({ siteId: selectedSite });
-      setWorkers(workerData);
+      // Get all workers first, then filter by site if needed
+      const allWorkers = await workerService.getAllWorkers();
+      const filteredWorkers = selectedSite !== "all" 
+        ? allWorkers.filter(worker => worker.site_id === selectedSite)
+        : allWorkers;
+      setWorkers(filteredWorkers);
     } catch (error) {
       console.error("Failed to load workers:", error);
       toast.error("Failed to load workers");

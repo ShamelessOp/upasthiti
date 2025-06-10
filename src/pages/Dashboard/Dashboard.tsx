@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,7 +40,7 @@ export default function Dashboard() {
   // Fetch attendance summary
   const { data: attendanceSummary, isLoading: attendanceLoading } = useQuery({
     queryKey: ['attendance-summary'],
-    queryFn: attendanceService.getAttendanceSummary,
+    queryFn: () => attendanceService.getAttendanceSummary(),
     staleTime: 30 * 1000,
   });
 

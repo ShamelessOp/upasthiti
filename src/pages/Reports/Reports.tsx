@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,6 @@ import { toast } from 'sonner';
 import { siteService } from '@/services/siteService';
 import { workerService } from '@/services/workerService';
 import { attendanceService } from '@/services/attendanceService';
-import { localStorageService } from '@/services/localStorage';
 import { Site } from '@/models/site';
 import { Worker } from '@/models/worker';
 import { AttendanceRecord } from '@/models/attendance';
@@ -71,12 +69,8 @@ export default function Reports() {
         const loadedSites = await siteService.getAllSites();
         setSites(loadedSites);
         
-        // Get all workers
-        let allWorkers: Worker[] = [];
-        for (const site of loadedSites) {
-          const siteWorkers = await workerService.getAllWorkers({ siteId: site.id });
-          allWorkers = [...allWorkers, ...siteWorkers];
-        }
+        // Get all workers without any filter parameter
+        const allWorkers = await workerService.getAllWorkers();
         setWorkers(allWorkers);
         
         // Get attendance records
