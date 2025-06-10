@@ -1,163 +1,173 @@
-import { supabase } from "@/integrations/supabase/client";
-import { Worker, WorkerFilter } from "@/models/worker";
-import { toast } from "sonner";
-import { localStorageService } from "../localStorage";
-import { filterWorkers } from "./workerFilter";
-import { addSampleWorkers } from "./workerSample";
 
-const WORKERS_STORAGE_KEY = "workers";
+import { Worker, WorkerStatus } from "@/models/worker";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface CreateWorkerInput {
+  worker_id: string;
+  name: string;
+  contact_number: string;
+  address?: string;
+  skills: string[];
+  daily_wage: number;
+  joining_date: string;
+  site_id: string;
+  status?: WorkerStatus;
+}
+
+interface UpdateWorkerInput {
+  worker_id?: string;
+  name?: string;
+  contact_number?: string;
+  address?: string;
+  skills?: string[];
+  daily_wage?: number;
+  joining_date?: string;
+  site_id?: string;
+  status?: WorkerStatus;
+}
 
 export const workerCrud = {
-  async getAllWorkers(filter?: WorkerFilter): Promise<Worker[]> {
+  // Get all workers from Supabase
+  async getAllWorkers(): Promise<Worker[]> {
     try {
-      // Start with a query to Supabase
-      let query = supabase
-        .from("workers")
-        .select("*")
-        .order("created_at", { ascending: false });
-        
-      // Apply filters to the query if provided
-      if (filter?.siteId) query = query.eq("site_id", filter.siteId);
-      if (filter?.status) query = query.eq("status", filter.status);
-      if (filter?.skill) query = query.contains("skills", [filter.skill]);
-      if (filter?.searchQuery) {
-        query = query.or(
-          `name.ilike.%${filter.searchQuery}%,worker_id.ilike.%${filter.searchQuery}%`
-        );
-      }
+      const { data, error } = await supabase
+        .from('workers')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      const { data, error } = await query;
-      
       if (error) {
-        console.error("Supabase error:", error);
-        // Fallback to local storage if Supabase fails
-        const localWorkers = localStorageService.get<Worker[]>(WORKERS_STORAGE_KEY) || [];
-        return filterWorkers(localWorkers, filter);
+        console.error("Error fetching workers:", error);
+        toast.error("Failed to fetch workers");
+        return [];
       }
 
-      if (data && data.length > 0) {
-        // Keep a local copy for offline access
-        localStorageService.set(WORKERS_STORAGE_KEY, data);
-        return data as Worker[];
-      }
-      
-      // If no data from Supabase, check local storage
-      const localWorkers = localStorageService.get<Worker[]>(WORKERS_STORAGE_KEY);
-      if (localWorkers && localWorkers.length > 0) {
-        return filterWorkers(localWorkers, filter);
-      }
-
-      // If we get here and have a siteId but no workers, add sample workers
-      if (filter?.siteId) {
-        const sampleWorkers = await addSampleWorkers(filter.siteId);
-        return filterWorkers(sampleWorkers, filter);
-      }
-
-      return [];
+      return data as Worker[];
     } catch (error) {
       console.error("Error in getAllWorkers:", error);
+      toast.error("Failed to fetch workers");
       return [];
     }
   },
 
-  async createWorker(worker: Omit<Worker, 'id' | 'created_at' | 'updated_at'>): Promise<Worker> {
+  // Get workers by site ID from Supabase
+  async getWorkersBySiteId(siteId: string): Promise<Worker[]> {
     try {
       const { data, error } = await supabase
-        .from("workers")
-        .insert([worker])
+        .from('workers')
+        .select('*')
+        .eq('site_id', siteId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching workers by site:", error);
+        toast.error("Failed to fetch workers");
+        return [];
+      }
+
+      return data as Worker[];
+    } catch (error) {
+      console.error("Error in getWorkersBySiteId:", error);
+      toast.error("Failed to fetch workers");
+      return [];
+    }
+  },
+
+  // Get worker by ID from Supabase
+  async getWorkerById(id: string): Promise<Worker | null> {
+    try {
+      const { data, error } = await supabase
+        .from('workers')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching worker:", error);
+        return null;
+      }
+
+      return data as Worker;
+    } catch (error) {
+      console.error("Failed to retrieve worker:", error);
+      return null;
+    }
+  },
+
+  // Create new worker in Supabase
+  async createWorker(workerData: CreateWorkerInput): Promise<Worker | null> {
+    try {
+      const newWorker = {
+        ...workerData,
+        status: workerData.status || 'active' as WorkerStatus
+      };
+
+      const { data, error } = await supabase
+        .from('workers')
+        .insert([newWorker])
         .select()
         .single();
 
-      if (error) throw error;
-
-      // Update local cache
-      const localWorkers = localStorageService.get<Worker[]>(WORKERS_STORAGE_KEY) || [];
-      localWorkers.push(data as Worker);
-      localStorageService.set(WORKERS_STORAGE_KEY, localWorkers);
+      if (error) {
+        console.error("Error creating worker:", error);
+        toast.error("Failed to create worker");
+        return null;
+      }
 
       toast.success("Worker created successfully");
       return data as Worker;
     } catch (error) {
       console.error("Failed to create worker:", error);
       toast.error("Failed to create worker");
-      throw error;
-    }
-  },
-
-  async getWorkerById(id: string): Promise<Worker | null> {
-    try {
-      // Try Supabase first
-      const { data, error } = await supabase
-        .from("workers")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) {
-        console.error("Supabase error:", error);
-        // Fallback to local storage
-        const localWorkers = localStorageService.get<Worker[]>(WORKERS_STORAGE_KEY);
-        if (localWorkers) {
-          const worker = localWorkers.find(worker => worker.id === id);
-          if (worker) return worker;
-        }
-        return null;
-      }
-
-      return data as Worker;
-    } catch (error) {
-      console.error("Failed to fetch worker:", error);
       return null;
     }
   },
 
-  async updateWorker(id: string, worker: Partial<Worker>): Promise<Worker> {
+  // Update worker in Supabase
+  async updateWorker(id: string, workerData: UpdateWorkerInput): Promise<Worker | null> {
     try {
       const { data, error } = await supabase
-        .from("workers")
-        .update(worker)
-        .eq("id", id)
+        .from('workers')
+        .update(workerData)
+        .eq('id', id)
         .select()
         .single();
 
-      if (error) throw error;
-
-      // Update local cache
-      const localWorkers = localStorageService.get<Worker[]>(WORKERS_STORAGE_KEY) || [];
-      const updatedWorkers = localWorkers.map(w =>
-        w.id === id ? { ...w, ...worker } : w
-      );
-      localStorageService.set(WORKERS_STORAGE_KEY, updatedWorkers);
+      if (error) {
+        console.error("Error updating worker:", error);
+        toast.error("Failed to update worker");
+        return null;
+      }
 
       toast.success("Worker updated successfully");
       return data as Worker;
     } catch (error) {
       console.error("Failed to update worker:", error);
       toast.error("Failed to update worker");
-      throw error;
+      return null;
     }
   },
 
+  // Delete worker from Supabase
   async deleteWorker(id: string): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from("workers")
+        .from('workers')
         .delete()
-        .eq("id", id);
+        .eq('id', id);
 
-      if (error) throw error;
-
-      // Update local cache
-      const localWorkers = localStorageService.get<Worker[]>(WORKERS_STORAGE_KEY) || [];
-      const filteredWorkers = localWorkers.filter(w => w.id !== id);
-      localStorageService.set(WORKERS_STORAGE_KEY, filteredWorkers);
+      if (error) {
+        console.error("Error deleting worker:", error);
+        toast.error("Failed to delete worker");
+        return false;
+      }
 
       toast.success("Worker deleted successfully");
       return true;
     } catch (error) {
       console.error("Failed to delete worker:", error);
       toast.error("Failed to delete worker");
-      throw error;
+      return false;
     }
   }
 };

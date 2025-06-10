@@ -2,31 +2,17 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { supabase } from './integrations/supabase/client';
 
-// Initialize the app
+// Initialize the app with Supabase
 const initApp = async () => {
   try {
-    console.log("Initializing app...");
+    console.log("Initializing app with Supabase backend...");
     
-    // Get the Supabase session
-    const { data, error } = await supabase.auth.getSession();
-    
-    if (error) {
-      console.error("Error checking Supabase session:", error);
-    }
-    
-    if (data.session) {
-      console.log("User is already logged in:", data.session.user.email);
-    } else {
-      console.log("No active session found");
-    }
-    
-    // Render the app
+    // Render the app - Supabase session will be handled by AuthContext
     createRoot(document.getElementById("root")!).render(<App />);
   } catch (error) {
     console.error("Application initialization failed:", error);
-    // Fallback to ensure the app renders even if data loading fails
+    // Ensure the app renders even if initialization fails
     createRoot(document.getElementById("root")!).render(<App />);
   }
 };

@@ -17,16 +17,11 @@ export default function Sites() {
   const { data: sites, isLoading, refetch } = useQuery({
     queryKey: ['sites'],
     queryFn: siteService.getAllSites,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000, // 30 seconds
   });
 
   // Set up realtime data subscription
   useRealtimeData('sites', 'sites');
-  
-  useEffect(() => {
-    // Initial data fetch
-    refetch();
-  }, [refetch]);
 
   if (isLoading) {
     return (

@@ -3,44 +3,47 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, DollarSign, Package, UserCheck, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { attendanceService } from "@/services/attendanceService";
+import { useQuery } from "@tanstack/react-query";
 import { siteService } from "@/services/siteService";
+import { workerService } from "@/services/workerService";
+import { attendanceService } from "@/services/attendanceService";
+import { useRealtimeData } from "@/hooks/useRealtimeData";
 import { AttendanceSummary } from "@/models/attendance";
 import { Site } from "@/models/site";
 import { toast } from "sonner";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummary | null>(null);
-  const [sites, setSites] = useState<Site[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [workerCount, setWorkerCount] = useState(0);
-  const [lowStockCount, setLowStockCount] = useState(7);
   const [weeklyPayroll, setWeeklyPayroll] = useState(284500);
+  const [lowStockCount, setLowStockCount] = useState(7);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  // Set up real-time subscriptions for all relevant tables
+  useRealtimeData('sites', 'sites');
+  useRealtimeData('workers', 'workers');
+  useRealtimeData('attendance', 'attendance');
 
-  const loadDashboardData = async () => {
-    setIsLoading(true);
-    try {
-      // Load attendance summary
-      const summary = await attendanceService.getAttendanceSummary();
-      setAttendanceSummary(summary);
-      
-      // Load sites
-      const siteData = await siteService.getAllSites();
-      setSites(siteData);
-      
-      // Get worker count from database later
-      setWorkerCount(siteData.length * 25); // Temporary calculation
-    } catch (error) {
-      toast.error("Failed to load dashboard data");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Fetch sites data
+  const { data: sites, isLoading: sitesLoading } = useQuery({
+    queryKey: ['sites'],
+    queryFn: siteService.getAllSites,
+    staleTime: 30 * 1000,
+  });
+
+  // Fetch workers data
+  const { data: workers, isLoading: workersLoading } = useQuery({
+    queryKey: ['workers'],
+    queryFn: workerService.getAllWorkers,
+    staleTime: 30 * 1000,
+  });
+
+  // Fetch attendance summary
+  const { data: attendanceSummary, isLoading: attendanceLoading } = useQuery({
+    queryKey: ['attendance-summary'],
+    queryFn: attendanceService.getAttendanceSummary,
+    staleTime: 30 * 1000,
+  });
+
+  const isLoading = sitesLoading || workersLoading || attendanceLoading;
 
   // Format currency values
   const formatCurrency = (value: number) => {
@@ -72,9 +75,9 @@ export default function Dashboard() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{isLoading ? "..." : workerCount}</div>
+                <div className="text-2xl font-bold">{isLoading ? "..." : workers?.length || 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  Across {sites.length} active sites
+                  Across {sites?.length || 0} active sites
                 </p>
               </CardContent>
             </Card>
