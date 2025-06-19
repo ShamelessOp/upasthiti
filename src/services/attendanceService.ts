@@ -9,8 +9,8 @@ class AttendanceService {
         .from("attendance")
         .select(`
           *,
-          worker:workers(name, worker_id),
-          site:sites(name)
+          worker:workers!inner(name, worker_id),
+          site:sites!inner(name)
         `);
 
       if (filter) {
@@ -20,19 +20,16 @@ class AttendanceService {
         if (filter.date) {
           query = query.eq("date", filter.date);
         }
-        if (filter.searchQuery) {
-          query = query.or(`worker.name.ilike.%${filter.searchQuery}%,worker.worker_id.ilike.%${filter.searchQuery}%`);
-        }
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching attendance:", error);
         throw error;
       }
 
-      return (data || []).map(record => ({
+      let results = (data || []).map(record => ({
         id: record.id,
         workerId: record.worker?.worker_id || "",
         workerName: record.worker?.name || "",
@@ -48,6 +45,17 @@ class AttendanceService {
         createdAt: record.created_at,
         updatedAt: record.updated_at
       }));
+
+      // Apply search filter if provided
+      if (filter?.searchQuery) {
+        const searchLower = filter.searchQuery.toLowerCase();
+        results = results.filter(record => 
+          record.workerName.toLowerCase().includes(searchLower) ||
+          record.workerId.toLowerCase().includes(searchLower)
+        );
+      }
+
+      return results;
     } catch (error) {
       console.error("Failed to fetch attendance records:", error);
       throw error;
@@ -109,7 +117,11 @@ class AttendanceService {
           created_by: record.createdBy,
           updated_by: record.updatedBy
         })
-        .select()
+        .select(`
+          *,
+          worker:workers!inner(name, worker_id),
+          site:sites!inner(name)
+        `)
         .single();
 
       if (error) {
@@ -119,10 +131,10 @@ class AttendanceService {
 
       return {
         id: data.id,
-        workerId: data.worker_id,
-        workerName: "",
+        workerId: data.worker?.worker_id || "",
+        workerName: data.worker?.name || "",
         siteId: data.site_id,
-        siteName: "",
+        siteName: data.site?.name || "",
         date: data.date,
         status: data.status as AttendanceStatus,
         checkInTime: data.check_in_time || "",
@@ -152,7 +164,11 @@ class AttendanceService {
           updated_at: new Date().toISOString()
         })
         .eq("id", id)
-        .select()
+        .select(`
+          *,
+          worker:workers!inner(name, worker_id),
+          site:sites!inner(name)
+        `)
         .single();
 
       if (error) {
@@ -162,10 +178,10 @@ class AttendanceService {
 
       return {
         id: data.id,
-        workerId: data.worker_id,
-        workerName: "",
+        workerId: data.worker?.worker_id || "",
+        workerName: data.worker?.name || "",
         siteId: data.site_id,
-        siteName: "",
+        siteName: data.site?.name || "",
         date: data.date,
         status: data.status as AttendanceStatus,
         checkInTime: data.check_in_time || "",

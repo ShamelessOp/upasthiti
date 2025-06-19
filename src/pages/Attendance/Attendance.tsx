@@ -14,6 +14,7 @@ import { Site } from "@/models/site";
 import { Worker } from "@/models/worker";
 import { toast } from "sonner";
 import { AddWorkerDialog } from "./components/AddWorkerDialog";
+import { useRealtimeData } from "@/hooks/useRealtimeData";
 import * as XLSX from 'xlsx';
 
 export default function Attendance() {
@@ -28,8 +29,13 @@ export default function Attendance() {
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [deletingWorkerId, setDeletingWorkerId] = useState<string | null>(null);
 
+  // Set up realtime subscriptions for workers and attendance
+  useRealtimeData('workers', ['workers'], ['INSERT', 'UPDATE', 'DELETE']);
+  useRealtimeData('attendance', ['attendance'], ['INSERT', 'UPDATE', 'DELETE']);
+
   useEffect(() => {
     loadSites();
+    loadAttendanceRecords();
   }, []);
 
   const loadSites = async () => {
@@ -43,22 +49,53 @@ export default function Attendance() {
   };
 
   useEffect(() => {
-    if (selectedSite !== "all") {
-      loadWorkers();
-    }
+    loadWorkers();
   }, [selectedSite]);
 
   const loadWorkers = async () => {
     try {
-      // Get all workers first, then filter by site if needed
       const allWorkers = await workerService.getAllWorkers();
       const filteredWorkers = selectedSite !== "all" 
         ? allWorkers.filter(worker => worker.site_id === selectedSite)
         : allWorkers;
       setWorkers(filteredWorkers);
+      
+      // Auto-create attendance records for workers if they don't exist
+      await createMissingAttendanceRecords(filteredWorkers);
     } catch (error) {
       console.error("Failed to load workers:", error);
       toast.error("Failed to load workers");
+    }
+  };
+
+  const createMissingAttendanceRecords = async (workersList: Worker[]) => {
+    try {
+      const existingAttendance = await attendanceService.getAttendance({
+        date: selectedDate,
+        siteId: selectedSite !== "all" ? selectedSite : undefined
+      });
+      
+      const existingWorkerIds = existingAttendance.map(record => record.workerId);
+      const missingWorkers = workersList.filter(worker => 
+        !existingWorkerIds.includes(worker.worker_id)
+      );
+
+      // Create attendance records for missing workers
+      for (const worker of missingWorkers) {
+        await attendanceService.markAttendance({
+          workerId: worker.worker_id,
+          siteId: worker.site_id,
+          date: selectedDate,
+          status: 'Absent',
+          checkInTime: '',
+          checkOutTime: '',
+          overtimeHours: 0,
+          createdBy: 'system',
+          updatedBy: 'system'
+        });
+      }
+    } catch (error) {
+      console.error("Failed to create missing attendance records:", error);
     }
   };
 
@@ -87,6 +124,11 @@ export default function Attendance() {
     }
   };
 
+  // Reload attendance when date or site changes
+  useEffect(() => {
+    loadAttendanceRecords();
+  }, [selectedDate, selectedSite, searchQuery]);
+
   const handleSearch = () => {
     loadAttendanceRecords();
   };
@@ -94,13 +136,22 @@ export default function Attendance() {
   const handleMarkAttendance = async (record: AttendanceRecord, status: 'Present' | 'Absent') => {
     try {
       if (status === 'Present') {
-        await attendanceService.markAttendance({
-          ...record,
+        await attendanceService.updateAttendance(record.id, {
           status: 'Present',
-          checkInTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+          checkInTime: new Date().toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            hour12: false 
+          }),
+          updatedBy: 'user'
         });
       } else {
-        await attendanceService.updateAttendance(record.id, { status: 'Absent' });
+        await attendanceService.updateAttendance(record.id, { 
+          status: 'Absent',
+          checkInTime: '',
+          checkOutTime: '',
+          updatedBy: 'user'
+        });
       }
       loadAttendanceRecords();
       toast.success(`Attendance marked as ${status}`);
@@ -247,8 +298,8 @@ export default function Attendance() {
                       attendanceRecords.map((record) => (
                         <TableRow key={record.id}>
                           <TableCell className="font-medium">{record.workerId}</TableCell>
-                          <TableCell>{record.workerName}</TableCell>
-                          <TableCell>{record.siteName}</TableCell>
+                          <TableCell>{record.workerName || 'Loading...'}</TableCell>
+                          <TableCell>{record.siteName || 'Loading...'}</TableCell>
                           <TableCell>{formatTime(record.checkInTime)}</TableCell>
                           <TableCell>{formatTime(record.checkOutTime)}</TableCell>
                           <TableCell>
@@ -302,7 +353,10 @@ export default function Attendance() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={8} className="text-center py-4">
-                          No attendance records found
+                          {selectedSite === "all" ? 
+                            "Select a site to view attendance records" : 
+                            "No attendance records found. Add workers to this site to get started."
+                          }
                         </TableCell>
                       </TableRow>
                     )}
