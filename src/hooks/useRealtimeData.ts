@@ -14,7 +14,11 @@ type PostgresChangesPayload = {
   errors: any;
 };
 
-export function useRealtimeData(tableName: TableName, queryKey: string | string[], events: ChangeEvent[] = ['*']) {
+export function useRealtimeData(
+  tableName: TableName, 
+  queryKey: string | string[], 
+  events: ChangeEvent[] = ['*']
+) {
   const queryClient = useQueryClient();
   
   useEffect(() => {
@@ -34,7 +38,7 @@ export function useRealtimeData(tableName: TableName, queryKey: string | string[
       events.forEach(event => {
         if (event === '*') {
           // Subscribe to all events
-          const specificEvents: ChangeEvent[] = ['INSERT', 'UPDATE', 'DELETE'];
+          const specificEvents: Exclude<ChangeEvent, '*'>[] = ['INSERT', 'UPDATE', 'DELETE'];
           specificEvents.forEach(specificEvent => {
             channel.on(
               'postgres_changes' as any,

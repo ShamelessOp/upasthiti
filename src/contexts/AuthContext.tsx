@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (session?.user) {
           // Check if email is confirmed
-          if (!session.user.email_confirmed_at && event !== 'SIGNED_UP') {
+          if (!session.user.email_confirmed_at) {
             console.log('Email not confirmed, user cannot access app');
             setUser(null);
             setLoading(false);
