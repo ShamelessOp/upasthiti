@@ -34,7 +34,8 @@ export function useRealtimeData(tableName: TableName, queryKey: string | string[
       events.forEach(event => {
         if (event === '*') {
           // Subscribe to all events
-          (['INSERT', 'UPDATE', 'DELETE'] as const).forEach(specificEvent => {
+          const specificEvents: ChangeEvent[] = ['INSERT', 'UPDATE', 'DELETE'];
+          specificEvents.forEach(specificEvent => {
             channel.on(
               'postgres_changes' as any,
               {

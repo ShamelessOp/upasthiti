@@ -1,7 +1,6 @@
 
 import { User, UserCredentials, UserRegistration, UserRole } from "@/models/user";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 export const authService = {
   // Check if user is authenticated
@@ -29,6 +28,11 @@ export const authService = {
       }
       
       if (data.user) {
+        // Check if email is confirmed
+        if (!data.user.email_confirmed_at) {
+          throw new Error("Please check your email and click the confirmation link before logging in.");
+        }
+
         // Create user object from Supabase user
         const user: User = {
           id: data.user.id,
@@ -59,7 +63,8 @@ export const authService = {
           data: {
             name: userData.name,
             role: userData.role
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/`
         }
       });
       

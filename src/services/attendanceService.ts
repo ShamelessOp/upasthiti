@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { AttendanceRecord, AttendanceFilter, AttendanceSummary } from "@/models/attendance";
+import { AttendanceRecord, AttendanceFilter, AttendanceSummary, AttendanceStatus } from "@/models/attendance";
 
 class AttendanceService {
   async getAttendance(filter?: AttendanceFilter): Promise<AttendanceRecord[]> {
@@ -39,7 +39,7 @@ class AttendanceService {
         siteId: record.site_id,
         siteName: record.site?.name || "",
         date: record.date,
-        status: record.status,
+        status: record.status as AttendanceStatus,
         checkInTime: record.check_in_time || "",
         checkOutTime: record.check_out_time || "",
         overtimeHours: record.overtime_hours || 0,
@@ -86,8 +86,7 @@ class AttendanceService {
       return {
         totalWorkers: totalWorkers || 0,
         present,
-        absent,
-        date: today
+        absent
       };
     } catch (error) {
       console.error("Failed to fetch attendance summary:", error);
@@ -125,7 +124,7 @@ class AttendanceService {
         siteId: data.site_id,
         siteName: "",
         date: data.date,
-        status: data.status,
+        status: data.status as AttendanceStatus,
         checkInTime: data.check_in_time || "",
         checkOutTime: data.check_out_time || "",
         overtimeHours: data.overtime_hours || 0,
@@ -168,7 +167,7 @@ class AttendanceService {
         siteId: data.site_id,
         siteName: "",
         date: data.date,
-        status: data.status,
+        status: data.status as AttendanceStatus,
         checkInTime: data.check_in_time || "",
         checkOutTime: data.check_out_time || "",
         overtimeHours: data.overtime_hours || 0,

@@ -5,20 +5,39 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
+import { AlertCircle, Mail } from "lucide-react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [showEmailConfirmationInfo, setShowEmailConfirmationInfo] = useState(false);
   const { login, isAuthenticated } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError("");
+    setShowEmailConfirmationInfo(false);
     
     try {
       await login(email, password);
+    } catch (error: any) {
+      console.error("Login error:", error);
+      
+      // Handle specific error messages
+      if (error.message?.includes("Invalid login credentials")) {
+        setError("Invalid email or password. If you just signed up, please check your email for a confirmation link first.");
+        setShowEmailConfirmationInfo(true);
+      } else if (error.message?.includes("Email not confirmed")) {
+        setError("Please check your email and click the confirmation link before logging in.");
+        setShowEmailConfirmationInfo(true);
+      } else {
+        setError(error.message || "Login failed. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -41,6 +60,23 @@ export default function Login() {
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              
+              {showEmailConfirmationInfo && (
+                <Alert>
+                  <Mail className="h-4 w-4" />
+                  <AlertDescription>
+                    Check your email (including spam folder) for a confirmation link from Supabase. 
+                    Click the link to verify your account, then try logging in again.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input

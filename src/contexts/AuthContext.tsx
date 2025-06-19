@@ -38,6 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('Auth state change:', event, session ? session.user?.email : 'No user');
         
         if (session?.user) {
+          // Check if email is confirmed
+          if (!session.user.email_confirmed_at && event !== 'SIGNED_UP') {
+            console.log('Email not confirmed, user cannot access app');
+            setUser(null);
+            setLoading(false);
+            return;
+          }
+
           // Get or create user profile
           const { data: profile, error } = await supabase
             .from('profiles')
@@ -83,11 +91,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     
     try {
-      await authService.login({ email, password });
-      toast.success("Login successful!");
+      const result = await authService.login({ email, password });
+      if (result) {
+        toast.success("Login successful!");
+      }
     } catch (error: any) {
       console.error("Login error:", error);
-      toast.error(error.message || "Login failed. Please check your credentials.");
+      // Re-throw error so Login component can handle it
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -98,11 +109,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     
     try {
-      await authService.register({ name, email, password, role });
-      toast.success("Account created successfully!");
+      const result = await authService.register({ name, email, password, role });
+      if (result) {
+        // Don't show success toast here, let the Signup component handle it
+        console.log("Signup successful, confirmation email sent");
+      }
     } catch (error: any) {
       console.error("Signup error:", error);
-      toast.error(error.message || "Signup failed. Please try again.");
+      // Re-throw error so Signup component can handle it
+      throw error;
     } finally {
       setLoading(false);
     }

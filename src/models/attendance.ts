@@ -33,7 +33,7 @@ export interface AttendanceSummary {
   totalWorkers: number;
   present: number;
   absent: number;
-  leave: number;
-  halfDay: number;
-  averageAttendance: number;
+  leave?: number;
+  halfDay?: number;
+  averageAttendance?: number;
 }
