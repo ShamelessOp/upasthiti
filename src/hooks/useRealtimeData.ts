@@ -24,13 +24,6 @@ export function useRealtimeData(
   useEffect(() => {
     // Set up realtime subscriptions
     const setupRealtimeSubscription = async () => {
-      // Enable realtime for the table if needed (one-time setup)
-      try {
-        await supabase.rpc('enable_realtime', { table_name: tableName });
-      } catch (error) {
-        console.log(`Realtime might already be enabled for ${tableName} or not available`);
-      }
-      
       // Create the channel for this table
       const channel = supabase.channel(`${tableName}-changes`);
       
@@ -38,7 +31,7 @@ export function useRealtimeData(
       events.forEach(event => {
         if (event === '*') {
           // Subscribe to all events
-          const specificEvents: Exclude<ChangeEvent, '*'>[] = ['INSERT', 'UPDATE', 'DELETE'];
+          const specificEvents: ('INSERT' | 'UPDATE' | 'DELETE')[] = ['INSERT', 'UPDATE', 'DELETE'];
           specificEvents.forEach(specificEvent => {
             channel.on(
               'postgres_changes' as any,
@@ -123,7 +116,7 @@ export function useRealtimeData(
         }
       });
     };
-  }, [tableName, queryKey, queryClient, JSON.stringify(events)]);
+  }, [tableName, Array.isArray(queryKey) ? queryKey.join(',') : queryKey, queryClient, events.join(',')]);
 }
 
 // Helper function to enable realtime for multiple tables
