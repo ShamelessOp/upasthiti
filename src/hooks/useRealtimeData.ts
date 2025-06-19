@@ -123,7 +123,7 @@ export function useRealtimeData(
         }
       });
     };
-  }, [tableName, queryKey, queryClient, events.join(',')]);
+  }, [tableName, queryKey, queryClient, JSON.stringify(events)]);
 }
 
 // Helper function to enable realtime for multiple tables
