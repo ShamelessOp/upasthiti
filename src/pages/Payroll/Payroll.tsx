@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,105 +7,114 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-
-const MOCK_SITES = [
-  { id: "1", name: "Site A - Residential Complex" },
-  { id: "2", name: "Site B - Commercial Building" },
-  { id: "3", name: "Site C - Highway Project" },
-];
-
-const MOCK_PAYROLL_DATA = [
-  {
-    id: "1",
-    workerId: "W001",
-    name: "Rajesh Kumar",
-    site: "Site A - Residential Complex",
-    period: "Apr 01-15, 2025",
-    daysWorked: 14,
-    overtimeHours: 6,
-    basicPay: 14000,
-    overtimePay: 1200,
-    totalPay: 15200,
-    status: "Paid",
-    paymentDate: "Apr 16, 2025",
-  },
-  {
-    id: "2",
-    workerId: "W002",
-    name: "Sunil Sharma",
-    site: "Site A - Residential Complex",
-    period: "Apr 01-15, 2025",
-    daysWorked: 13,
-    overtimeHours: 2,
-    basicPay: 13000,
-    overtimePay: 400,
-    totalPay: 13400,
-    status: "Paid",
-    paymentDate: "Apr 16, 2025",
-  },
-  {
-    id: "3",
-    workerId: "W003",
-    name: "Priya Patel",
-    site: "Site B - Commercial Building",
-    period: "Apr 01-15, 2025",
-    daysWorked: 15,
-    overtimeHours: 8,
-    basicPay: 15000,
-    overtimePay: 1600,
-    totalPay: 16600,
-    status: "Paid",
-    paymentDate: "Apr 16, 2025",
-  },
-  {
-    id: "4",
-    workerId: "W004",
-    name: "Amit Singh",
-    site: "Site C - Highway Project",
-    period: "Apr 01-15, 2025",
-    daysWorked: 10,
-    overtimeHours: 0,
-    basicPay: 10000,
-    overtimePay: 0,
-    totalPay: 10000,
-    status: "Pending",
-    paymentDate: "-",
-  },
-  {
-    id: "5",
-    workerId: "W005",
-    name: "Neha Gupta",
-    site: "Site B - Commercial Building",
-    period: "Apr 01-15, 2025",
-    daysWorked: 12,
-    overtimeHours: 5,
-    basicPay: 12000,
-    overtimePay: 1000,
-    totalPay: 13000,
-    status: "Paid",
-    paymentDate: "Apr 16, 2025",
-  },
-];
+import { payrollService } from "@/services/payrollService";
+import { siteService } from "@/services/siteService";
+import { PayrollRecord, PayrollSummary } from "@/models/payroll";
+import { Site } from "@/models/site";
+import { PayrollGenerationDialog } from "./components/PayrollGenerationDialog";
+import { toast } from "sonner";
+import * as XLSX from 'xlsx';
 
 export default function Payroll() {
   const [selectedSite, setSelectedSite] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("current");
+  const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [summary, setSummary] = useState<PayrollSummary>({
+    totalWorkers: 0,
+    paidWorkers: 0,
+    pendingWorkers: 0,
+    totalAmount: 0,
+    totalBasicPay: 0,
+    totalOvertimePay: 0,
+    totalDeductions: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
 
-  const filteredPayroll = MOCK_PAYROLL_DATA.filter((record) => {
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    loadPayrollRecords();
+  }, [selectedSite, searchQuery, selectedPeriod]);
+
+  const loadData = async () => {
+    try {
+      const [siteData, summaryData] = await Promise.all([
+        siteService.getAllSites(),
+        payrollService.getPayrollSummary()
+      ]);
+      
+      setSites(siteData);
+      setSummary(summaryData);
+    } catch (error) {
+      toast.error("Failed to load data");
+    }
+  };
+
+  const loadPayrollRecords = async () => {
+    setIsLoading(true);
+    try {
+      const filter = {
+        siteId: selectedSite !== "all" ? selectedSite : undefined,
+        searchQuery: searchQuery || undefined
+      };
+
+      const records = await payrollService.getPayrollRecords(filter);
+      setPayrollRecords(records);
+    } catch (error) {
+      toast.error("Failed to load payroll records");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleExportToExcel = () => {
+    const data = payrollRecords.map(record => ({
+      'Worker ID': record.workerId,
+      'Worker Name': record.workerName,
+      'Site': record.siteName,
+      'Period': record.period,
+      'Days Worked': record.daysWorked,
+      'Overtime Hours': record.overtimeHours,
+      'Basic Pay': record.basicPay,
+      'Overtime Pay': record.overtimePay,
+      'Deductions': record.deductions,
+      'Total Pay': record.totalPay,
+      'Status': record.status,
+      'Payment Date': record.paymentDate || 'Pending'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Payroll');
+    XLSX.writeFile(wb, `payroll_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success('Payroll data exported successfully');
+  };
+
+  const handleUpdatePayrollStatus = async (id: string, status: "Pending" | "Paid" | "Cancelled") => {
+    try {
+      await payrollService.updatePayrollStatus(id, status);
+      loadPayrollRecords();
+      loadData(); // Refresh summary
+    } catch (error) {
+      toast.error("Failed to update payroll status");
+    }
+  };
+
+  const filteredPayroll = payrollRecords.filter((record) => {
     const matchesSearch =
-      record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      record.workerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       record.workerId.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesSite =
-      selectedSite === "all" || record.site.includes(selectedSite);
+      selectedSite === "all" || record.siteId === selectedSite;
     
     return matchesSearch && matchesSite;
   });
-
-  const totalWorkers = filteredPayroll.length;
-  const totalPaid = filteredPayroll.filter(r => r.status === "Paid").length;
-  const totalAmount = filteredPayroll.reduce((sum, record) => sum + record.totalPay, 0);
 
   return (
     <div className="space-y-6 animate-in">
@@ -117,13 +126,13 @@ export default function Payroll() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportToExcel}>
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Export Excel
           </Button>
-          <Button>
+          <Button onClick={() => setShowGenerateDialog(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Process Payroll
+            Generate Payroll
           </Button>
         </div>
       </div>
@@ -142,7 +151,7 @@ export default function Payroll() {
                 <CardTitle className="text-sm font-medium">Total Workers</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totalWorkers}</div>
+                <div className="text-2xl font-bold">{summary.totalWorkers}</div>
                 <p className="text-xs text-muted-foreground">
                   Current payroll period
                 </p>
@@ -154,9 +163,9 @@ export default function Payroll() {
                 <CardTitle className="text-sm font-medium">Payments Processed</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totalPaid} / {totalWorkers}</div>
+                <div className="text-2xl font-bold">{summary.paidWorkers} / {summary.totalWorkers}</div>
                 <p className="text-xs text-muted-foreground">
-                  {((totalPaid / totalWorkers) * 100).toFixed(1)}% completed
+                  {summary.totalWorkers > 0 ? ((summary.paidWorkers / summary.totalWorkers) * 100).toFixed(1) : 0}% completed
                 </p>
               </CardContent>
             </Card>
@@ -166,7 +175,7 @@ export default function Payroll() {
                 <CardTitle className="text-sm font-medium">Total Amount</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">₹{totalAmount.toLocaleString()}</div>
+                <div className="text-2xl font-bold">₹{summary.totalAmount.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">
                   For current period
                 </p>
@@ -178,7 +187,7 @@ export default function Payroll() {
             <CardHeader>
               <CardTitle>Payroll Details</CardTitle>
               <CardDescription>
-                Period: April 01-15, 2025
+                Current payroll period records
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -189,9 +198,9 @@ export default function Payroll() {
                       <SelectValue placeholder="Select period" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="current">Apr 01-15, 2025</SelectItem>
-                      <SelectItem value="previous">Mar 16-31, 2025</SelectItem>
-                      <SelectItem value="earlier">Mar 01-15, 2025</SelectItem>
+                      <SelectItem value="current">Current Period</SelectItem>
+                      <SelectItem value="previous">Previous Period</SelectItem>
+                      <SelectItem value="earlier">Earlier Periods</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -202,8 +211,8 @@ export default function Payroll() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Sites</SelectItem>
-                      {MOCK_SITES.map((site) => (
-                        <SelectItem key={site.id} value={site.name}>
+                      {sites.map((site) => (
+                        <SelectItem key={site.id} value={site.id}>
                           {site.name}
                         </SelectItem>
                       ))}
@@ -238,34 +247,57 @@ export default function Payroll() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPayroll.length > 0 ? (
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={10} className="text-center py-4">
+                          <div className="flex justify-center">
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredPayroll.length > 0 ? (
                       filteredPayroll.map((record) => (
                         <TableRow key={record.id}>
                           <TableCell className="font-medium">{record.workerId}</TableCell>
-                          <TableCell>{record.name}</TableCell>
-                          <TableCell>{record.site}</TableCell>
+                          <TableCell>{record.workerName}</TableCell>
+                          <TableCell>{record.siteName}</TableCell>
                           <TableCell className="text-right">{record.daysWorked}</TableCell>
                           <TableCell className="text-right">{record.overtimeHours}</TableCell>
                           <TableCell className="text-right">{record.basicPay.toLocaleString()}</TableCell>
                           <TableCell className="text-right">{record.overtimePay.toLocaleString()}</TableCell>
                           <TableCell className="text-right font-medium">{record.totalPay.toLocaleString()}</TableCell>
                           <TableCell>
-                            <Badge variant={record.status === "Paid" ? "default" : "secondary"}>
+                            <Badge variant={
+                              record.status === "Paid" ? "default" : 
+                              record.status === "Pending" ? "secondary" : 
+                              "destructive"
+                            }>
                               {record.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Button variant="ghost" size="sm">
-                              <FileText className="h-4 w-4" />
-                              <span className="sr-only">Generate Payslip</span>
-                            </Button>
+                            <div className="flex space-x-1">
+                              {record.status === "Pending" && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleUpdatePayrollStatus(record.id, "Paid")}
+                                >
+                                  Mark Paid
+                                </Button>
+                              )}
+                              <Button variant="ghost" size="sm">
+                                <FileText className="h-4 w-4" />
+                                <span className="sr-only">Generate Payslip</span>
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
                         <TableCell colSpan={10} className="text-center py-4">
-                          No payroll records found
+                          No payroll records found. Generate payroll to get started.
                         </TableCell>
                       </TableRow>
                     )}
@@ -275,9 +307,9 @@ export default function Payroll() {
             </CardContent>
             <CardFooter className="flex justify-between">
               <div className="text-sm text-muted-foreground">
-                Showing {filteredPayroll.length} of {MOCK_PAYROLL_DATA.length} records
+                Showing {filteredPayroll.length} records
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleExportToExcel}>
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>
@@ -317,6 +349,15 @@ export default function Payroll() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <PayrollGenerationDialog
+        open={showGenerateDialog}
+        onOpenChange={setShowGenerateDialog}
+        onPayrollGenerated={() => {
+          loadPayrollRecords();
+          loadData();
+        }}
+      />
     </div>
   );
 }
