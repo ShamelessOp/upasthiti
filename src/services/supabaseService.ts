@@ -6,7 +6,7 @@ export class SupabaseService {
   async create<T>(table: string, data: any): Promise<T | null> {
     try {
       const { data: result, error } = await supabase
-        .from(table)
+        .from(table as any)
         .insert(data)
         .select()
         .single();
@@ -27,7 +27,7 @@ export class SupabaseService {
 
   async read<T>(table: string, filters?: any): Promise<T[]> {
     try {
-      let query = supabase.from(table).select('*');
+      let query = supabase.from(table as any).select('*');
       
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
@@ -54,7 +54,7 @@ export class SupabaseService {
   async update<T>(table: string, id: string, data: any): Promise<T | null> {
     try {
       const { data: result, error } = await supabase
-        .from(table)
+        .from(table as any)
         .update({ ...data, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -77,7 +77,7 @@ export class SupabaseService {
   async delete(table: string, id: string): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from(table)
+        .from(table as any)
         .delete()
         .eq('id', id);
 
