@@ -44,7 +44,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, isAuthenticated } = useAuth();
   
   useEffect(() => {
-    // You can log auth status for debugging
     console.log("Auth status:", { isAuthenticated, loading });
   }, [isAuthenticated, loading]);
   
@@ -74,7 +73,14 @@ const AppRoutes = () => {
       <Route path="/signup" element={<Signup />} />
       
       {/* Protected Routes */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route 
+        path="/" 
+        element={
+          <ProtectedRoute>
+            <Navigate to="/dashboard" replace />
+          </ProtectedRoute>
+        } 
+      />
       
       <Route 
         path="/dashboard" 
