@@ -116,15 +116,15 @@ export function useRealtimeData(
         }
       });
     };
-  }, [tableName, Array.isArray(queryKey) ? queryKey.join(',') : queryKey, queryClient, JSON.stringify(events)]);
+  }, [tableName, Array.isArray(queryKey) ? queryKey.join(',') : queryKey, queryClient, events.join(',')]);
 }
 
 // Helper function to enable realtime for multiple tables
 export async function enableRealtimeForTables(tableNames: TableName[]) {
   for (const tableName of tableNames) {
     try {
-      // This RPC call may not exist, so we just log success
-      console.log(`Realtime should be enabled for ${tableName}`);
+      await supabase.rpc('enable_realtime', { table_name: tableName });
+      console.log(`Enabled realtime for ${tableName}`);
     } catch (error) {
       console.log(`Realtime might already be enabled for ${tableName} or not available`);
     }

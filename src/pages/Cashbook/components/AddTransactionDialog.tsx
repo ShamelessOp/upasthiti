@@ -126,7 +126,7 @@ export function AddTransactionDialog({ open, onOpenChange, onTransactionAdded }:
                 setFormData(prev => ({ 
                   ...prev, 
                   transactionType: value,
-                  type: (selectedType?.type as 'income' | 'expense') || 'expense'
+                  type: selectedType?.type || 'expense'
                 }));
               }}
             >
