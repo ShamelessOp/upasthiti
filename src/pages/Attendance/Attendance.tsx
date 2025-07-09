@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, FileSpreadsheet, Search, UserMinus, Edit } from "lucide-react";
+import { Calendar, FileSpreadsheet, Search, UserMinus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,7 +14,6 @@ import { Site } from "@/models/site";
 import { Worker } from "@/models/worker";
 import { toast } from "sonner";
 import { AddWorkerDialog } from "./components/AddWorkerDialog";
-import { AttendanceMarkingDialog } from "./components/AttendanceMarkingDialog";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
 import * as XLSX from 'xlsx';
 
@@ -29,8 +28,6 @@ export default function Attendance() {
   const [totalCount, setTotalCount] = useState(0);
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [deletingWorkerId, setDeletingWorkerId] = useState<string | null>(null);
-  const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(null);
-  const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Set up realtime subscriptions for workers and attendance
   useRealtimeData('workers', ['workers'], ['INSERT', 'UPDATE', 'DELETE']);
@@ -163,11 +160,6 @@ export default function Attendance() {
     }
   };
 
-  const handleEditAttendance = (record: AttendanceRecord) => {
-    setEditingRecord(record);
-    setShowEditDialog(true);
-  };
-
   const handleExportToExcel = () => {
     const data = attendanceRecords.map(record => ({
       'Date': record.date,
@@ -184,7 +176,6 @@ export default function Attendance() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
     XLSX.writeFile(wb, `attendance_${selectedDate}.xlsx`);
-    toast.success('Attendance data exported successfully');
   };
 
   const formatTime = (time: string) => {
@@ -313,10 +304,7 @@ export default function Attendance() {
                           <TableCell>{formatTime(record.checkOutTime)}</TableCell>
                           <TableCell>
                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              record.status === "Present" ? "bg-green-100 text-green-800" : 
-                              record.status === "Absent" ? "bg-red-100 text-red-800" :
-                              record.status === "Leave" ? "bg-blue-100 text-blue-800" :
-                              "bg-yellow-100 text-yellow-800"
+                              record.status === "Present" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                             }`}>
                               {record.status}
                             </span>
@@ -342,12 +330,8 @@ export default function Attendance() {
                                   Mark Absent
                                 </Button>
                               )}
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => handleEditAttendance(record)}
-                              >
-                                <Edit className="h-4 w-4" />
+                              <Button variant="outline" size="sm">
+                                Edit
                               </Button>
                               {workers.find(w => w.worker_id === record.workerId) && (
                                 <Button
@@ -415,16 +399,6 @@ export default function Attendance() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      <AttendanceMarkingDialog
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
-        record={editingRecord}
-        onUpdate={() => {
-          loadAttendanceRecords();
-          setEditingRecord(null);
-        }}
-      />
     </div>
   );
 }

@@ -1,18 +1,16 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, Plus, Search, TrendingDown, TrendingUp, Package } from "lucide-react";
+import { AlertTriangle, Plus, Search, TrendingDown, TrendingUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { inventoryService } from "@/services/inventoryService";
-import { InventoryItem } from "@/models/inventory";
-import { AddInventoryDialog } from "./components/AddInventoryDialog";
-import { toast } from "sonner";
 
+// Mock data for demonstration purposes
 const MOCK_CATEGORIES = [
   { id: "1", name: "Construction Materials" },
   { id: "2", name: "Tools & Equipment" },
@@ -20,31 +18,126 @@ const MOCK_CATEGORIES = [
   { id: "4", name: "Electrical Supplies" },
 ];
 
+const MOCK_INVENTORY_DATA = [
+  {
+    id: "1",
+    itemCode: "CM001",
+    name: "Cement Bags (50kg)",
+    category: "Construction Materials",
+    quantity: 150,
+    unit: "Bags",
+    unitPrice: 350,
+    totalValue: 52500,
+    reorderLevel: 30,
+    lastUpdated: "Apr 10, 2025",
+  },
+  {
+    id: "2",
+    itemCode: "CM002",
+    name: "Sand",
+    category: "Construction Materials",
+    quantity: 25,
+    unit: "Tons",
+    unitPrice: 1200,
+    totalValue: 30000,
+    reorderLevel: 10,
+    lastUpdated: "Apr 09, 2025",
+  },
+  {
+    id: "3",
+    itemCode: "CM003",
+    name: "Steel Bars (10mm)",
+    category: "Construction Materials",
+    quantity: 500,
+    unit: "Pcs",
+    unitPrice: 850,
+    totalValue: 425000,
+    reorderLevel: 100,
+    lastUpdated: "Apr 05, 2025",
+  },
+  {
+    id: "4",
+    itemCode: "TE001",
+    name: "Concrete Mixer",
+    category: "Tools & Equipment",
+    quantity: 5,
+    unit: "Pcs",
+    unitPrice: 25000,
+    totalValue: 125000,
+    reorderLevel: 2,
+    lastUpdated: "Mar 28, 2025",
+  },
+  {
+    id: "5",
+    itemCode: "SG001",
+    name: "Safety Helmets",
+    category: "Safety Gear",
+    quantity: 25,
+    unit: "Pcs",
+    unitPrice: 450,
+    totalValue: 11250,
+    reorderLevel: 20,
+    lastUpdated: "Apr 08, 2025",
+  },
+  {
+    id: "6",
+    itemCode: "ES001",
+    name: "Electrical Wires (1.5mm)",
+    category: "Electrical Supplies",
+    quantity: 8,
+    unit: "Rolls",
+    unitPrice: 2200,
+    totalValue: 17600,
+    reorderLevel: 5,
+    lastUpdated: "Apr 07, 2025",
+  },
+];
+
+const MOCK_RECENT_TRANSACTIONS = [
+  {
+    id: "1",
+    date: "Apr 10, 2025",
+    itemName: "Cement Bags (50kg)",
+    type: "Inward",
+    quantity: 50,
+    site: "Site A - Residential Complex",
+    updatedBy: "Rajesh Kumar",
+  },
+  {
+    id: "2",
+    date: "Apr 09, 2025",
+    itemName: "Safety Helmets",
+    type: "Outward",
+    quantity: 10,
+    site: "Site B - Commercial Building",
+    updatedBy: "Sunil Sharma",
+  },
+  {
+    id: "3",
+    date: "Apr 08, 2025",
+    itemName: "Sand",
+    type: "Inward",
+    quantity: 5,
+    site: "Site C - Highway Project",
+    updatedBy: "Amit Singh",
+  },
+  {
+    id: "4",
+    date: "Apr 07, 2025",
+    itemName: "Electrical Wires (1.5mm)",
+    type: "Outward",
+    quantity: 2,
+    site: "Site A - Residential Complex",
+    updatedBy: "Priya Patel",
+  },
+];
+
 export default function Inventory() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-
-  useEffect(() => {
-    loadInventoryItems();
-  }, []);
-
-  const loadInventoryItems = async () => {
-    setIsLoading(true);
-    try {
-      const items = await inventoryService.getAllItems();
-      setInventoryItems(items);
-    } catch (error) {
-      toast.error("Failed to load inventory items");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Filter inventory data based on search query and selected category
-  const filteredInventory = inventoryItems.filter((item) => {
+  const filteredInventory = MOCK_INVENTORY_DATA.filter((item) => {
     const matchesSearch =
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.itemCode.toLowerCase().includes(searchQuery.toLowerCase());
@@ -56,7 +149,7 @@ export default function Inventory() {
   });
 
   // Get low stock items
-  const lowStockItems = inventoryItems.filter(
+  const lowStockItems = MOCK_INVENTORY_DATA.filter(
     (item) => item.quantity <= item.reorderLevel
   );
 
@@ -64,49 +157,6 @@ export default function Inventory() {
   const totalItems = filteredInventory.length;
   const totalValue = filteredInventory.reduce((sum, item) => sum + item.totalValue, 0);
   const lowStockCount = lowStockItems.length;
-
-  const handleStockUpdate = async (itemId: string, type: 'in' | 'out', quantity: number) => {
-    try {
-      const item = inventoryItems.find(i => i.id === itemId);
-      if (!item) return;
-
-      const newQuantity = type === 'in' ? item.quantity + quantity : item.quantity - quantity;
-      
-      if (newQuantity < 0) {
-        toast.error("Cannot reduce stock below zero");
-        return;
-      }
-
-      await inventoryService.updateItemQuantity(itemId, newQuantity);
-      
-      // Update local state
-      setInventoryItems(items => 
-        items.map(i => 
-          i.id === itemId 
-            ? { ...i, quantity: newQuantity, totalValue: newQuantity * i.unitPrice }
-            : i
-        )
-      );
-
-      // Record transaction
-      await inventoryService.addInventoryTransaction({
-        itemId,
-        itemName: item.name,
-        type: type === 'in' ? 'Inward' : 'Outward',
-        quantity,
-        unitPrice: item.unitPrice,
-        totalValue: quantity * item.unitPrice,
-        date: new Date().toISOString().split('T')[0],
-        siteId: item.siteId,
-        siteName: item.siteName,
-        updatedBy: 'Current User'
-      });
-
-      toast.success(`Stock ${type === 'in' ? 'added' : 'removed'} successfully`);
-    } catch (error) {
-      toast.error("Failed to update stock");
-    }
-  };
 
   return (
     <div className="space-y-6 animate-in">
@@ -117,7 +167,7 @@ export default function Inventory() {
             Track and manage construction materials and equipment
           </p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)}>
+        <Button>
           <Plus className="mr-2 h-4 w-4" />
           Add Item
         </Button>
@@ -127,12 +177,11 @@ export default function Inventory() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Items</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalItems}</div>
             <p className="text-xs text-muted-foreground">
-              In {MOCK_CATEGORIES.length} categories
+              In {Object.keys(MOCK_CATEGORIES).length} categories
             </p>
           </CardContent>
         </Card>
@@ -152,7 +201,6 @@ export default function Inventory() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Low Stock Alert</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{lowStockCount} items</div>
@@ -222,15 +270,7 @@ export default function Inventory() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={9} className="text-center py-4">
-                          <div className="flex justify-center">
-                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : filteredInventory.length > 0 ? (
+                    {filteredInventory.length > 0 ? (
                       filteredInventory.map((item) => (
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">{item.itemCode}</TableCell>
@@ -252,29 +292,11 @@ export default function Inventory() {
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => {
-                                  const quantity = prompt("Enter quantity to add:");
-                                  if (quantity && !isNaN(Number(quantity))) {
-                                    handleStockUpdate(item.id, 'in', Number(quantity));
-                                  }
-                                }}
-                              >
+                              <Button variant="ghost" size="sm">
                                 <TrendingUp className="h-4 w-4" />
                                 <span className="sr-only">Stock In</span>
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => {
-                                  const quantity = prompt("Enter quantity to remove:");
-                                  if (quantity && !isNaN(Number(quantity))) {
-                                    handleStockUpdate(item.id, 'out', Number(quantity));
-                                  }
-                                }}
-                              >
+                              <Button variant="ghost" size="sm">
                                 <TrendingDown className="h-4 w-4" />
                                 <span className="sr-only">Stock Out</span>
                               </Button>
@@ -295,7 +317,7 @@ export default function Inventory() {
             </CardContent>
             <CardFooter className="flex justify-between">
               <div className="text-sm text-muted-foreground">
-                Showing {filteredInventory.length} of {inventoryItems.length} items
+                Showing {filteredInventory.length} of {MOCK_INVENTORY_DATA.length} items
               </div>
               <Button variant="outline" size="sm">
                 Export
@@ -313,8 +335,43 @@ export default function Inventory() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-6">
-                <p className="text-muted-foreground">Recent transactions will be displayed here</p>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Item Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Quantity</TableHead>
+                      <TableHead>Site</TableHead>
+                      <TableHead>Updated By</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {MOCK_RECENT_TRANSACTIONS.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell>{transaction.date}</TableCell>
+                        <TableCell className="font-medium">{transaction.itemName}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={transaction.type === "Inward" ? "default" : "secondary"}
+                            className="flex items-center gap-1 w-fit"
+                          >
+                            {transaction.type === "Inward" ? (
+                              <TrendingUp className="h-3 w-3" />
+                            ) : (
+                              <TrendingDown className="h-3 w-3" />
+                            )}
+                            {transaction.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{transaction.quantity}</TableCell>
+                        <TableCell>{transaction.site}</TableCell>
+                        <TableCell>{transaction.updatedBy}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
@@ -352,15 +409,7 @@ export default function Inventory() {
                           <Progress value={(item.quantity / item.reorderLevel) * 100} className="h-2" />
                         </div>
                         <div className="flex justify-end mt-4">
-                          <Button 
-                            size="sm"
-                            onClick={() => {
-                              const quantity = prompt("Enter quantity to restock:");
-                              if (quantity && !isNaN(Number(quantity))) {
-                                handleStockUpdate(item.id, 'in', Number(quantity));
-                              }
-                            }}
-                          >
+                          <Button size="sm">
                             <Plus className="mr-1 h-4 w-4" />
                             Restock
                           </Button>
@@ -378,12 +427,6 @@ export default function Inventory() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      <AddInventoryDialog
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-        onItemAdded={loadInventoryItems}
-      />
     </div>
   );
 }

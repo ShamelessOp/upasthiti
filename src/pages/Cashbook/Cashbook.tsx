@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,111 +7,222 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { cashbookService } from "@/services/cashbookService";
-import { siteService } from "@/services/siteService";
-import { CashTransaction, CashbookSummary } from "@/models/cashbook";
-import { Site } from "@/models/site";
-import { AddTransactionDialog } from "./components/AddTransactionDialog";
-import { toast } from "sonner";
-import * as XLSX from 'xlsx';
+
+// Mock data for demonstration purposes
+const MOCK_SITES = [
+  { id: "1", name: "Site A - Residential Complex" },
+  { id: "2", name: "Site B - Commercial Building" },
+  { id: "3", name: "Site C - Highway Project" },
+];
+
+const MOCK_TRANSACTION_TYPES = [
+  { id: "1", name: "Material Purchase", type: "expense" },
+  { id: "2", name: "Wages Payment", type: "expense" },
+  { id: "3", name: "Petty Cash", type: "expense" },
+  { id: "4", name: "Fund Transfer", type: "income" },
+  { id: "5", name: "Advance Payment", type: "income" },
+];
+
+// Updated mock data with more entries
+const MOCK_CASHBOOK_DATA = [
+  {
+    id: "1",
+    date: "Apr 18, 2025",
+    site: "Site A - Residential Complex",
+    transactionType: "Material Purchase",
+    description: "Cement and Steel Bars",
+    amount: 45000,
+    type: "expense",
+    reference: "PO-2025-0045",
+    recordedBy: "Rajesh Kumar",
+  },
+  {
+    id: "2",
+    date: "Apr 18, 2025",
+    site: "Site B - Commercial Building",
+    transactionType: "Wages Payment",
+    description: "Weekly wages for 25 workers",
+    amount: 87500,
+    type: "expense",
+    reference: "PAY-2025-0078",
+    recordedBy: "Sunil Sharma",
+  },
+  {
+    id: "3",
+    date: "Apr 17, 2025",
+    site: "Site C - Highway Project",
+    transactionType: "Fund Transfer",
+    description: "Project fund allocation",
+    amount: 200000,
+    type: "income",
+    reference: "TRF-2025-0023",
+    recordedBy: "Priya Patel",
+  },
+  {
+    id: "4",
+    date: "Apr 17, 2025",
+    site: "Site A - Residential Complex",
+    transactionType: "Petty Cash",
+    description: "Miscellaneous site expenses",
+    amount: 5000,
+    type: "expense",
+    reference: "PC-2025-0056",
+    recordedBy: "Amit Singh",
+  },
+  {
+    id: "5",
+    date: "Apr 16, 2025",
+    site: "Site B - Commercial Building",
+    transactionType: "Advance Payment",
+    description: "Client advance for Phase 2",
+    amount: 500000,
+    type: "income",
+    reference: "ADV-2025-0012",
+    recordedBy: "Neha Gupta",
+  },
+  {
+    id: "6",
+    date: "Apr 16, 2025",
+    site: "Site C - Highway Project",
+    transactionType: "Equipment Rental",
+    description: "Excavator rental for 1 week",
+    amount: 35000,
+    type: "expense",
+    reference: "RENT-2025-0067",
+    recordedBy: "Vikram Singh",
+  },
+  {
+    id: "7",
+    date: "Apr 15, 2025",
+    site: "Site A - Residential Complex",
+    transactionType: "Material Purchase",
+    description: "Electrical wiring and fixtures",
+    amount: 28500,
+    type: "expense",
+    reference: "PO-2025-0046",
+    recordedBy: "Rajesh Kumar",
+  },
+  {
+    id: "8",
+    date: "Apr 15, 2025",
+    site: "Site B - Commercial Building",
+    transactionType: "Consultant Fee",
+    description: "Structural engineer consultation",
+    amount: 15000,
+    type: "expense",
+    reference: "CONS-2025-0034",
+    recordedBy: "Sunil Sharma",
+  },
+  {
+    id: "9",
+    date: "Apr 14, 2025",
+    site: "Site C - Highway Project",
+    transactionType: "Fund Transfer",
+    description: "Additional project funding",
+    amount: 300000,
+    type: "income",
+    reference: "TRF-2025-0024",
+    recordedBy: "Priya Patel",
+  },
+  {
+    id: "10",
+    date: "Apr 14, 2025",
+    site: "Site A - Residential Complex",
+    transactionType: "Material Purchase",
+    description: "Plumbing materials",
+    amount: 18500,
+    type: "expense",
+    reference: "PO-2025-0047",
+    recordedBy: "Amit Singh",
+  },
+  {
+    id: "11",
+    date: "Apr 13, 2025",
+    site: "Site B - Commercial Building",
+    transactionType: "Wages Payment",
+    description: "Overtime payment for 15 workers",
+    amount: 22500,
+    type: "expense",
+    reference: "PAY-2025-0079",
+    recordedBy: "Neha Gupta",
+  },
+  {
+    id: "12",
+    date: "Apr 13, 2025",
+    site: "Site C - Highway Project",
+    transactionType: "Equipment Purchase",
+    description: "Concrete mixer machine",
+    amount: 85000,
+    type: "expense",
+    reference: "PO-2025-0048",
+    recordedBy: "Vikram Singh",
+  },
+  {
+    id: "13",
+    date: "Apr 12, 2025",
+    site: "Site A - Residential Complex",
+    transactionType: "Advance Payment",
+    description: "Client milestone payment",
+    amount: 750000,
+    type: "income",
+    reference: "ADV-2025-0013",
+    recordedBy: "Rajesh Kumar",
+  },
+  {
+    id: "14",
+    date: "Apr 12, 2025",
+    site: "Site B - Commercial Building",
+    transactionType: "Transport",
+    description: "Material transportation charges",
+    amount: 12000,
+    type: "expense",
+    reference: "TR-2025-0089",
+    recordedBy: "Sunil Sharma",
+  },
+  {
+    id: "15",
+    date: "Apr 11, 2025",
+    site: "Site C - Highway Project",
+    transactionType: "Material Purchase",
+    description: "Bitumen and aggregates",
+    amount: 125000,
+    type: "expense",
+    reference: "PO-2025-0049",
+    recordedBy: "Priya Patel",
+  },
+];
 
 export default function Cashbook() {
   const [selectedSite, setSelectedSite] = useState<string>("all");
   const [selectedTransactionType, setSelectedTransactionType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
-  const [transactions, setTransactions] = useState<CashTransaction[]>([]);
-  const [sites, setSites] = useState<Site[]>([]);
-  const [summary, setSummary] = useState<CashbookSummary>({
-    totalIncome: 0,
-    totalExpense: 0,
-    balance: 0,
-    period: "Current Month"
+
+  // Filter cashbook data based on search query, selected site, and transaction type
+  const filteredCashbook = MOCK_CASHBOOK_DATA.filter((record) => {
+    const matchesSearch =
+      record.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      record.reference.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesSite =
+      selectedSite === "all" || record.site === selectedSite;
+    
+    const matchesTransactionType =
+      selectedTransactionType === "all" || record.transactionType === selectedTransactionType;
+    
+    return matchesSearch && matchesSite && matchesTransactionType;
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [showAddDialog, setShowAddDialog] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    loadTransactions();
-  }, [selectedSite, selectedTransactionType, searchQuery, selectedDate]);
-
-  const loadData = async () => {
-    try {
-      const [siteData, summaryData] = await Promise.all([
-        siteService.getAllSites(),
-        cashbookService.getCashbookSummary()
-      ]);
-      
-      setSites(siteData);
-      setSummary(summaryData);
-    } catch (error) {
-      toast.error("Failed to load data");
-    }
-  };
-
-  const loadTransactions = async () => {
-    setIsLoading(true);
-    try {
-      const filter = {
-        siteId: selectedSite !== "all" ? selectedSite : undefined,
-        transactionType: selectedTransactionType !== "all" ? selectedTransactionType : undefined,
-        searchQuery: searchQuery || undefined,
-        startDate: selectedDate || undefined
-      };
-
-      const data = await cashbookService.getAllTransactions(filter);
-      setTransactions(data);
-      
-      // Update summary based on filtered data
-      const totalIncome = data.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
-      const totalExpense = data.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
-      
-      setSummary(prev => ({
-        ...prev,
-        totalIncome,
-        totalExpense,
-        balance: totalIncome - totalExpense
-      }));
-    } catch (error) {
-      toast.error("Failed to load transactions");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleExportToExcel = () => {
-    const data = transactions.map(transaction => ({
-      'Date': transaction.date,
-      'Site': transaction.siteName,
-      'Transaction Type': transaction.transactionType,
-      'Description': transaction.description,
-      'Reference': transaction.reference,
-      'Amount': transaction.amount,
-      'Type': transaction.type,
-      'Recorded By': transaction.recordedBy
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Cashbook');
-    XLSX.writeFile(wb, `cashbook_${new Date().toISOString().split('T')[0]}.xlsx`);
-    toast.success('Cashbook data exported successfully');
-  };
-
-  const transactionTypes = [
-    "Material Purchase",
-    "Wages Payment", 
-    "Equipment Rental",
-    "Transport",
-    "Petty Cash",
-    "Fund Transfer",
-    "Advance Payment",
-    "Project Payment"
-  ];
+  // Calculate summary values
+  const totalIncome = filteredCashbook
+    .filter((record) => record.type === "income")
+    .reduce((sum, record) => sum + record.amount, 0);
+  
+  const totalExpense = filteredCashbook
+    .filter((record) => record.type === "expense")
+    .reduce((sum, record) => sum + record.amount, 0);
+  
+  const balance = totalIncome - totalExpense;
 
   return (
     <div className="space-y-6 animate-in">
@@ -122,16 +233,10 @@ export default function Cashbook() {
             Track cash inflows and outflows across sites
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExportToExcel}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-          <Button onClick={() => setShowAddDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Entry
-          </Button>
-        </div>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          New Entry
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -141,9 +246,9 @@ export default function Cashbook() {
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">₹{summary.totalIncome.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-green-600">₹{totalIncome.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              {summary.period}
+              Current period
             </p>
           </CardContent>
         </Card>
@@ -154,9 +259,9 @@ export default function Cashbook() {
             <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">₹{summary.totalExpense.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-red-600">₹{totalExpense.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              {summary.period}
+              Current period
             </p>
           </CardContent>
         </Card>
@@ -167,8 +272,8 @@ export default function Cashbook() {
             <ArrowDownUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${summary.balance >= 0 ? "text-green-600" : "text-red-600"}`}>
-              ₹{summary.balance.toLocaleString()}
+            <div className={`text-2xl font-bold ${balance >= 0 ? "text-green-600" : "text-red-600"}`}>
+              ₹{balance.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
               Net position
@@ -189,7 +294,7 @@ export default function Cashbook() {
             <CardHeader>
               <CardTitle>Cash Transactions</CardTitle>
               <CardDescription>
-                All cash movements for the selected period
+                All cash movements for April 2025
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -211,8 +316,8 @@ export default function Cashbook() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Sites</SelectItem>
-                      {sites.map((site) => (
-                        <SelectItem key={site.id} value={site.id}>
+                      {MOCK_SITES.map((site) => (
+                        <SelectItem key={site.id} value={site.name}>
                           {site.name}
                         </SelectItem>
                       ))}
@@ -226,9 +331,9 @@ export default function Cashbook() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
-                      {transactionTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
+                      {MOCK_TRANSACTION_TYPES.map((type) => (
+                        <SelectItem key={type.id} value={type.name}>
+                          {type.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -257,22 +362,15 @@ export default function Cashbook() {
                       <TableHead className="text-right">Amount (₹)</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Recorded By</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-4">
-                          <div className="flex justify-center">
-                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : transactions.length > 0 ? (
-                      transactions.map((record) => (
+                    {filteredCashbook.length > 0 ? (
+                      filteredCashbook.map((record) => (
                         <TableRow key={record.id}>
-                          <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
-                          <TableCell>{record.siteName}</TableCell>
+                          <TableCell>{record.date}</TableCell>
+                          <TableCell>{record.site}</TableCell>
                           <TableCell>{record.transactionType}</TableCell>
                           <TableCell>{record.description}</TableCell>
                           <TableCell className="font-mono">{record.reference}</TableCell>
@@ -291,11 +389,16 @@ export default function Cashbook() {
                             )}
                           </TableCell>
                           <TableCell>{record.recordedBy}</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="sm">
+                              View
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-4">
+                        <TableCell colSpan={9} className="text-center py-4">
                           No transactions found
                         </TableCell>
                       </TableRow>
@@ -306,8 +409,12 @@ export default function Cashbook() {
             </CardContent>
             <CardFooter className="flex justify-between">
               <div className="text-sm text-muted-foreground">
-                Showing {transactions.length} transactions
+                Showing {filteredCashbook.length} of {MOCK_CASHBOOK_DATA.length} transactions
               </div>
+              <Button variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -344,15 +451,6 @@ export default function Cashbook() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      <AddTransactionDialog
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-        onTransactionAdded={() => {
-          loadTransactions();
-          loadData();
-        }}
-      />
     </div>
   );
 }
